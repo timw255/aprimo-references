@@ -1,0 +1,117 @@
+---
+name: aprimo-references
+description: Write, fix, and verify Aprimo reference expressions (an XML DSL that runs against a digital-asset-management record). Use whenever the user asks to create, debug, explain, or convert an Aprimo reference, or mentions ref: tags, fieldName, onVariable, datetimeeval, switch/catch/foreach refs, or "DAM reference" logic. Bundles the actual compiler for verification plus the full tag documentation.
+---
+
+# Aprimo References
+
+Aprimo references are a small XML DSL (`<ref:...>` tags) that executes against a digital-asset
+record to produce a string. This skill lets you write them **correctly** by verifying every
+reference against the real compiler instead of relying on memory — the same way you'd write code
+against a linter and test runner. You do not need to have Aprimo memorized; you need to **check
+your work**.
+
+## The non-negotiable workflow
+
+Never hand the user a reference you have not run through the compiler. Always:
+
+1. **Understand the requirement.** Identify the fields read, the conditions, the branches, and the
+   exact output text.
+2. **Check the docs for any tag you're unsure about** (`docs/`). One file per tag, e.g.
+   `docs/compare.md`, `docs/datetimeeval.md`, `docs/switch.md`.
+   The docs are ground truth for attributes and behavior — read them, don't guess.
+3. **Write the reference**, following the rules in `reference/catalog.md` and
+   `reference/operators-and-logic.md`.
+4. **Lint it** (`-mode lint`). Fix every error. The error message names the problem precisely
+   (e.g. invalid operator → it lists the valid set; unknown attribute → it lists the valid ones).
+5. **Execute it** (`-mode execute`) against a context that exercises the logic, and confirm the
+   output is what the requirement asks for. Run it on a few different inputs to check each branch.
+6. **Iterate** until it lints clean AND behaves correctly, then deliver it. If you needed several
+   tries, the user only sees the final, verified reference — be terse unless they ask why.
+
+Reading a transpiler error and fixing it is normal and expected. A first draft that fails lint is
+fine; an unverified reference handed to the user is not.
+
+## Verifying — the compiler
+
+The compiler is bundled in `bin/` (`transpiler.exe` on Windows, `transpiler` on macOS).
+Input is the bare reference XML on **stdin**. Full details + examples in `reference/compiler.md`.
+
+```bash
+# 1. LINT — is it valid?  -> {"valid":true,"warnings":[]}  or errors with exact remedies
+echo '<ref:record fieldName="Title" out="value" store="@title"/><ref:text out="@title"/>' | bin/transpiler.exe -mode lint
+
+# 2. EXECUTE — what does it actually output?  (default context, or pass your own)
+echo '<ref:text out="Hello"/>' | bin/transpiler.exe -mode execute
+echo '<ref:record fieldName="Status" out="value" store="@status"/><ref:text out="@status"/>' \
+  | bin/transpiler.exe -mode execute -context-json '{"records":[{"fields":{"Status":"Approved"}}]}'
+
+# 3. ANALYZE — structural report (depth, branches, loops) when debugging nesting
+echo '<ref:foreach in="@items" storeitem="@item"><ref:text out="@item"/></ref:foreach>' | bin/transpiler.exe -mode analyze
+```
+
+To exercise branches, pass different `-context-json` values (vary `records[0].fields.*` and record
+attributes like `status`, `createdOnUTC`). `bin/default_context.json` shows the full context shape;
+`-mode dump-context` prints the live default.
+
+## The rules that matter most
+
+These are where references most often go wrong (read `reference/operators-and-logic.md` for detail):
+
+- **Read a field into a variable before you use it.** `<ref:record fieldName="X" out="value"
+  store="@xv"/>` first, then reference `@xv`. Using `@xv` before a `store="@xv"` defines it is the #1
+  error ("used before defined").
+- **Variable names need 2+ characters.** A name is `@` + a letter then letters/digits — **at least
+  two characters**, no underscores (`@s` and `@a_b` are invalid; use `@status`, `@aVal`). The
+  compiler hard-errors on an invalid `store=`, `storeitem=`, or `counter=` name, and a stray `@x`
+  read is treated as literal text, not a variable.
+- **`compare` operators are a closed set (verified):** `equal/eq/==`, `notEqual/ne/!=`,
+  `greaterThan/gt`, `greaterThanOrEquals/ge`, `lessThan/lt`, `lessThanOrEquals/le`. The only symbol
+  forms are `==`/`!=` (no `>`/`<`/`>=`/`<=`); it's `ge`/`le`, not `gte`/`lte`. There is **no
+  `contains`, `startsWith`, `in`, `matches`, `between`** — use `ref:regex` for substring, and
+  compare-per-candidate + OR (or `switch`) for membership.
+- **There are no `ref:if`, `ref:and`, `ref:or`, `ref:else` tags.** Branch with `ref:switch`
+  (multi-way) or `onVariable`-gated `ref:text`/`ref:object` (single condition). Combine *truth*
+  conditions by **nesting `IsNotZero` gates** (AND) or a gated emit + nested `IsZero` fallback (OR);
+  `onAllVariables`/`onAnyVariable` only check whether the variables are **defined** (a `compare`
+  result is always defined), so they're for "was this variable ever set", not boolean AND/OR.
+- **Date math is `ref:datetimeeval`** (`addYears`, `addMonths`, `addDays`, ...), never literal
+  text like `now+5`.
+- **`store` suppresses emission.** A ref with `store="@xv"` captures its value but prints nothing —
+  only an *ungated* `ref:text` emits. So you can read fields and run compares freely; only your
+  final `text` shows. `compare` yields `True`/`False` (not numbers), so combine conditions with
+  **gates**: AND = nested `IsNotZero` gates, OR = a gated emit plus a nested `IsZero` fallback;
+  `eval` is for numeric math only and **errors** on `True`/`False`.
+- **To turn programming intent into refs, use the construct map.** `if/else`, `switch`, `for-each`,
+  AND/OR/NOT, `try/catch`, counters, date math each have a fixed idiom in
+  `reference/computational-model.md`. Note the constructs with **no** idiom: no `while`/unbounded
+  loop (a `foreach` count is fixed by its input), recursion only via `result="ref"` capped at 3, and
+  a variable `store`d inside a `foreach`/`switch`/`object`/`catch` may not be readable after it —
+  `store` at the top level if you need it later.
+- **Externalize config into a setting instead of hardcoding.** Aprimo supports custom setting
+  definitions (text/number/xml/reference/…); read any with `ref:setting name="X"`. When a rule
+  would carry a big list, a mapping table, environment-specific URLs, or tunable thresholds, prefer
+  a setting the reference reads over baking it into the XML. See `docs/setting.md`.
+- **Don't invent tags or attributes.** If the compiler rejects one, it tells you the valid options —
+  use them. The full valid set is in `reference/catalog.md`.
+
+For worked, compiler-verified recipes (compound boolean rules, crash-safety with `catch`,
+conditional defaults, trimming before numeric compares, date logic), see `reference/patterns.md`.
+
+## Reference material in this skill
+
+- `reference/computational-model.md` — **construct map**: a copyable table translating ordinary
+  programming intent (assign, if/else, switch, for-each, AND/OR/NOT, try/catch, recursion, date
+  math) into the exact reference idiom, plus data types and the constructs that have no idiom
+  (no `while`, recursion capped at 3, block-local vars). Start here to turn intent into refs.
+- `reference/catalog.md` — every valid `ref:` tag, what it does, container-vs-leaf, key attributes.
+- `reference/dynamic-references.md` — **advanced**: emitting literal HTML (entity-encoding, the
+  `@`-sigil/`@import` collision) and building references as text to re-resolve with `result="ref"`
+  (dynamic refs, and the geometric-unroll loop for when you need bounded iteration but have no
+  collection to `foreach`). Fiddly multi-level escaping — use only when needed, and verify.
+- `reference/operators-and-logic.md` — comparisons, AND/OR, gating, branching, variable flow, date math.
+- `reference/patterns.md` — proven, compiler-verified recipes for common rule shapes.
+- `reference/debugging.md` — the loop for when a reference is wrong/blank/erroring, with a
+  symptom → cause → fix table.
+- `reference/compiler.md` — full compiler CLI: every mode, flags, output formats, how to read errors.
+- `docs/` — the complete per-tag Aprimo documentation (one `.md` per tag), ground truth for every tag.

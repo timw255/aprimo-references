@@ -1,0 +1,298 @@
+{
+  "user": {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "username": "testuser",
+    "name": "Test User",
+    "email": "test@example.com",
+    "groupNames": [
+      "Designers",
+      "Marketing"
+    ]
+  },
+  "users": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "username": "testuser",
+      "name": "Test User",
+      "email": "test@example.com",
+      "groupNames": [
+        "Designers",
+        "Marketing"
+      ]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "username": "admin",
+      "name": "Administrator",
+      "email": "admin@example.com",
+      "groupNames": [
+        "Administrators"
+      ]
+    }
+  ],
+  "userGroups": [
+    {
+      "id": "00db70f9-2fd2-417c-b898-337b7a26641a",
+      "name": "Everyone",
+      "tag": "system_group",
+      "createdonlocal": "2024-01-01T00:00:00",
+      "createdonutc": "2024-01-01T00:00:00Z",
+      "createdby": "system",
+      "modifiedonlocal": "2024-01-01T00:00:00",
+      "modifiedonutc": "2024-01-01T00:00:00Z",
+      "modifiedby": "system"
+    },
+    {
+      "id": "designers-guid-456",
+      "name": "Designers",
+      "tag": "creative_team",
+      "createdonlocal": "2024-01-15T10:30:00",
+      "createdonutc": "2024-01-15T10:30:00Z",
+      "createdby": "admin-user",
+      "modifiedonlocal": "2024-02-20T14:20:00",
+      "modifiedonutc": "2024-02-20T14:20:00Z",
+      "modifiedby": "admin-user"
+    },
+    {
+      "id": "marketing-guid-789",
+      "name": "Marketing",
+      "tag": "business_team",
+      "createdonlocal": "2024-01-20T09:00:00",
+      "createdonutc": "2024-01-20T09:00:00Z",
+      "createdby": "admin-user",
+      "modifiedonlocal": "2024-03-10T16:45:00",
+      "modifiedonutc": "2024-03-10T16:45:00Z",
+      "modifiedby": "admin-user"
+    }
+  ],
+  "records": [
+    {
+      "id": "rec123",
+      "status": "Approved",
+      "createdBy": "00000000-0000-0000-0000-000000000002",
+      "createdOnLocal": "2024-01-01T00:00:00",
+      "createdOnUTC": "2024-01-01T00:00:00Z",
+      "modifiedOnLocal": "2024-01-15T00:00:00",
+      "modifiedOnUTC": "2024-01-15T00:00:00Z",
+      "modifiedBy": "00000000-0000-0000-0000-000000000002"
+    }
+  ],
+  "currentField": {
+    "name": "TestField",
+    "value": "Test Value",
+    "label": "Test Field Label"
+  },
+  "collection": {
+    "name": "Test Collection",
+    "id": "10000000-0000-0000-0000-000000000001"
+  },
+  "session": {
+    "sessionId": "session-abc",
+    "languageId": "en-US"
+  },
+  "downloadOrderInfo": {
+    "fileName": "document.pdf",
+    "fileNameLabel": "download of 1 file(s): ",
+    "downloadsurl": "https://example.com/downloads/default"
+  },
+  "fileNaming": {
+    "fileName": "test.jpg",
+    "baseName": "test",
+    "extension": "jpg",
+    "fileVersionFileName": "test.jpg",
+    "fileVersionBaseName": "test",
+    "fileVersionExtension": "jpg",
+    "fileVersionAutoExtension": "jpg",
+    "fileVersionNumber": "1",
+    "index": "0",
+    "fileVersionId": "ver-123",
+    "renditionName": "Square"
+  },
+  "dictionary": {
+    "goodbye": "Goodbye",
+    "hello_user": "Hello, User!",
+    "thank_you": "Thank you",
+    "welcome": "Welcome"
+  },
+  "settings": {
+    ".apiEndpoint": "https://api.aprimo.com",
+    ".config": "/etc/aprimo",
+    ".defaultClassificationSortOrder": "name",
+    ".maxFileSize": "10485760",
+    ".systemName": "Aprimo DAM",
+    ".uploadPath": "/uploads/documents"
+  },
+  "fileTypes": [
+    {
+      "id": "pdf-guid-123",
+      "name": "Portable Document Format (PDF)",
+      "extension": "pdf",
+      "label": "PDF Document",
+      "kind": "Document",
+      "engineformat": "PDF",
+      "previewformat": "Jpg",
+      "iscatalogable": true,
+      "tag": "document",
+      "createdonlocal": "2024-01-01T00:00:00",
+      "createdonutc": "2024-01-01T00:00:00Z",
+      "createdby": "system-user"
+    },
+    {
+      "id": "jpg-guid-456",
+      "name": "JPEG Image",
+      "extension": "jpg",
+      "label": "JPEG Image",
+      "kind": "Image",
+      "engineformat": "JPEG",
+      "previewformat": "Jpg",
+      "iscatalogable": true,
+      "keepdocumentdimensions": true,
+      "tag": "image",
+      "createdonlocal": "2024-01-01T00:00:00",
+      "createdonutc": "2024-01-01T00:00:00Z",
+      "createdby": "system-user"
+    },
+    {
+      "id": "png-guid-789",
+      "name": "Portable Network Graphics (PNG)",
+      "extension": "png",
+      "label": "PNG Image",
+      "kind": "Image",
+      "engineformat": "PNG",
+      "previewformat": "Jpg",
+      "iscatalogable": true,
+      "keepdocumentdimensions": true,
+      "tag": "image",
+      "createdonlocal": "2024-01-01T00:00:00",
+      "createdonutc": "2024-01-01T00:00:00Z",
+      "createdby": "system-user"
+    },
+    {
+      "id": "img-generic-999",
+      "name": "Image",
+      "extension": "img",
+      "label": "Generic Image",
+      "kind": "Image",
+      "engineformat": "Generic",
+      "previewformat": "Jpg",
+      "iscatalogable": true,
+      "keepdocumentdimensions": true,
+      "tag": "image",
+      "createdonlocal": "2024-01-01T00:00:00",
+      "createdonutc": "2024-01-01T00:00:00Z",
+      "createdby": "system-user"
+    }
+  ],
+  "languages": [
+    {
+      "id": "en-US-guid-001",
+      "name": "English (United States)",
+      "culture": "en-US",
+      "enabledforfields": true,
+      "tag": "en-US",
+      "createdonlocal": "2024-01-01T00:00:00",
+      "createdonutc": "2024-01-01T00:00:00Z",
+      "createdby": "system",
+      "modifiedonlocal": "2024-01-01T00:00:00",
+      "modifiedonutc": "2024-01-01T00:00:00Z",
+      "modifiedby": "system"
+    },
+    {
+      "id": "es-ES-guid-002",
+      "name": "Spanish (Spain)",
+      "culture": "es-ES",
+      "enabledforfields": true,
+      "tag": "es-ES",
+      "createdonlocal": "2024-01-15T10:00:00",
+      "createdonutc": "2024-01-15T10:00:00Z",
+      "createdby": "admin-user",
+      "modifiedonlocal": "2024-01-15T10:00:00",
+      "modifiedonutc": "2024-01-15T10:00:00Z",
+      "modifiedby": "admin-user"
+    },
+    {
+      "id": "fr-FR-guid-003",
+      "name": "French (France)",
+      "culture": "fr-FR",
+      "enabledforfields": true,
+      "tag": "fr-FR",
+      "createdonlocal": "2024-01-20T11:30:00",
+      "createdonutc": "2024-01-20T11:30:00Z",
+      "createdby": "admin-user",
+      "modifiedonlocal": "2024-01-20T11:30:00",
+      "modifiedonutc": "2024-01-20T11:30:00Z",
+      "modifiedby": "admin-user"
+    },
+    {
+      "id": "de-DE-guid-004",
+      "name": "German (Germany)",
+      "culture": "de-DE",
+      "tag": "de-DE",
+      "createdonlocal": "2024-02-01T09:00:00",
+      "createdonutc": "2024-02-01T09:00:00Z",
+      "createdby": "admin-user",
+      "modifiedonlocal": "2024-02-01T09:00:00",
+      "modifiedonutc": "2024-02-01T09:00:00Z",
+      "modifiedby": "admin-user"
+    }
+  ],
+  "counters": {
+    "assetSequence": 42,
+    "invoiceNumber": 1000
+  },
+  "globals": {
+    "brandColor": "#FF6B35",
+    "companyName": "Example Corporation",
+    "fiscalYear": 2025
+  },
+  "classifications": [
+    {
+      "createdby": "system",
+      "createdonlocal": "2024-01-01T00:00:00",
+      "createdonutc": "2024-01-01T00:00:00Z",
+      "id": "class-content-000",
+      "identifier": "class-content-000",
+      "label": "Content",
+      "labelPath": "Content",
+      "modifiedby": "system",
+      "modifiedonlocal": "2024-01-01T00:00:00",
+      "modifiedonutc": "2024-01-01T00:00:00Z",
+      "name": "Content",
+      "namepath": "Content",
+      "parentid": "",
+      "tag": "root"
+    },
+    {
+      "createdby": "admin-user",
+      "createdonlocal": "2024-01-01T00:00:00",
+      "createdonutc": "2024-01-01T00:00:00Z",
+      "id": "class-marketing-001",
+      "identifier": "class-marketing-001",
+      "label": "Marketing",
+      "labelPath": "Content/Marketing",
+      "modifiedby": "admin-user",
+      "modifiedonlocal": "2024-02-20T14:20:00",
+      "modifiedonutc": "2024-02-20T14:20:00Z",
+      "name": "Marketing",
+      "namepath": "Content/Marketing",
+      "parentid": "class-content-000",
+      "tag": "department"
+    },
+    {
+      "createdby": "admin-user",
+      "createdonlocal": "2024-03-01T09:00:00",
+      "createdonutc": "2024-03-01T09:00:00Z",
+      "id": "class-q4campaign-002",
+      "identifier": "class-q4campaign-002",
+      "label": "Q4 Campaign",
+      "labelPath": "Content/Marketing/Q4 Campaign",
+      "modifiedby": "admin-user",
+      "modifiedonlocal": "2024-03-10T16:45:00",
+      "modifiedonutc": "2024-03-10T16:45:00Z",
+      "name": "Q4 Campaign",
+      "namepath": "Content/Marketing/Q4 Campaign",
+      "parentid": "class-marketing-001",
+      "tag": "campaign"
+    }
+  ]
+}
