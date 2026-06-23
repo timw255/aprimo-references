@@ -1,0 +1,44 @@
+name: Release skill
+
+# Cut a release by pushing a version tag, e.g.:
+#   git tag v1.0.0 && git push origin v1.0.0
+# `git archive --prefix` emits a zip whose root is the skill folder, straight from the
+# committed tree (so .git is never included), then it's attached to the GitHub release.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: # manual run: builds the zip and uploads it as a workflow artifact
+
+permissions:
+  contents: write # needed to create the release and upload the asset
+
+env:
+  SKILL: aprimo-references
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build skill zip
+        run: |
+          git archive --format=zip --prefix="$SKILL/" -o "$SKILL.zip" HEAD
+          echo "Built $SKILL.zip:"
+          unzip -l "$SKILL.zip"
+
+      - name: Attach zip to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.SKILL }}.zip
+
+      - name: Upload zip as artifact (manual runs)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SKILL }}-zip
+          path: ${{ env.SKILL }}.zip

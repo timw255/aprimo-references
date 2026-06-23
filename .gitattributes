@@ -1,0 +1,7 @@
+# Keep repo/CI metadata out of the release zip (git archive honors export-ignore).
+.github        export-ignore
+.gitattributes export-ignore
+
+# Bundled compiler binaries: treat as binary, never apply line-ending filters.
+bin/transpiler     binary
+bin/transpiler.exe binary
