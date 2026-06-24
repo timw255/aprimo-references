@@ -74,9 +74,63 @@
       "createdOnUTC": "2024-01-01T00:00:00Z",
       "modifiedOnLocal": "2024-01-15T00:00:00",
       "modifiedOnUTC": "2024-01-15T00:00:00Z",
-      "modifiedBy": "00000000-0000-0000-0000-000000000002"
+      "modifiedBy": "00000000-0000-0000-0000-000000000002",
+      "fields": {
+        "Author": "00000000-0000-0000-0000-000000000001",
+        "Keywords": [
+          "product",
+          "studio",
+          "hero"
+        ],
+        "Licensetype": {
+          "value": "opt-royaltyfree",
+          "valuename": "Royalty Free"
+        },
+        "PrimaryClassification": "class-marketing-001",
+        "RelatedAsset": "rec-related-001",
+        "Title": "Quarterly Product Shot"
+      }
+    },
+    {
+      "id": "rec-related-001",
+      "status": "Approved",
+      "fields": {
+        "Title": "Related Product Shot"
+      }
     }
   ],
+  "fieldMetadata": {
+    "Author": {
+      "name": "Author",
+      "label": "Author",
+      "dataType": "UserList"
+    },
+    "Keywords": {
+      "name": "Keywords",
+      "label": "Keywords",
+      "dataType": "TextList"
+    },
+    "Licensetype": {
+      "name": "Licensetype",
+      "label": "License Type",
+      "dataType": "OptionList"
+    },
+    "PrimaryClassification": {
+      "name": "PrimaryClassification",
+      "label": "Primary Classification",
+      "dataType": "ClassificationList"
+    },
+    "RelatedAsset": {
+      "name": "RelatedAsset",
+      "label": "Related Asset",
+      "dataType": "RecordLink"
+    },
+    "Title": {
+      "name": "Title",
+      "label": "Title",
+      "dataType": "SingleLineText"
+    }
+  },
   "currentField": {
     "name": "TestField",
     "value": "Test Value",

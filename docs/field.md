@@ -21,7 +21,7 @@ A "field" is not a standalone reference — you read a field by adding **field-s
 ### `out` values
 | Value | Type | Description |
 |---|---|---|
-| `value` | (depends) | The field's value in its own datatype. **Default.** Honors `languageName`/`languageID`; multi-value fields return a collection. |
+| `value` | (depends) | The field's value in its own datatype. **Default.** Honors `languageName`/`languageID`; multi-value fields return a collection. For **list-type fields** this is the selected object's **id(s)**, not a readable label — see [Reading list fields](#reading-list-fields-the-value-is-an-id-gotcha). |
 | `name` | String | Name of the field. |
 | `label` | String | Label of the field in the current user's language. |
 | `tostring` | String | String representation of the value. |
@@ -65,6 +65,98 @@ Produces: `"TestField"` (same)
 ```xml
 <ref:record id="07848ebe-58c7-405b-810a-a8f9178bebf0" fieldName="Description" languageName="French" out="value"/>
 ```
+
+## Reading list fields (the value-is-an-id gotcha)
+
+A **list-type field stores the id(s) of the selected object(s)**, not their text (verified
+live against Aprimo). So `out="value"` on a list field gives you **ids, not a readable label**
+— the single most common surprise when reading fields. How to get the readable value depends
+on the type:
+
+| Field type | What `out="value"` returns | Read the readable value with |
+|---|---|---|
+| **Option List** | the selected option's id | `out="valuename"` (one step) |
+| **Classification List** | classification id(s) | a two-step read: `<ref:classification id="@id" out="name"/>` |
+| **User List** | user id(s) | a two-step read: `<ref:user id="@id" out="name"/>` |
+| **Record List** | record id(s) | a two-step read: `<ref:record id="@id" fieldName="..."/>` |
+| **Record Link** | linked record id(s) | `out="valuechildren"`/`"valueparents"`/`"valuelinks"`, or resolve each id with `<ref:record id="@id" .../>` |
+| **Text List** | the literal strings | nothing extra — already readable |
+
+**Option List** — one step, no resolution needed:
+```xml
+<ref:record fieldName="Licensetype" out="valuename"/>   <!-- "Royalty Free", not the id -->
+```
+
+**Everything else** — read the id, then resolve the object by that id (loop with `foreach`
+for multi-value fields):
+```xml
+<ref:record fieldName="Status" out="value" store="@statusId"/>
+<ref:classification id="@statusId" out="name" store="@status"/>
+<ref:text out="@status"/>
+```
+
+> **`out="value"` on a list field is a warning, but the wrong *projection* is an error.**
+> Reading the id with `out="value"` is fine (it's the first step above) — the compiler just
+> warns you'll get ids. But `out="valuename"` on anything other than an Option List, or
+> `out="valuechildren"`/`valueparents`/`valuelinks` on anything other than a Record Link,
+> **throws a `ReferenceException`** — verified live against Aprimo. It's catchable: wrap it in
+> `ref:catch` if you need a fallback. (The compiler reproduces this when the field's `dataType`
+> is declared in the context — see below.)
+
+## Representing fields in the execution context
+
+To test a reference, the field must be in the context the way Aprimo stores it. **Most field
+types are just a string — but the list types are not**, and the compiler can only reproduce the
+id-vs-name behavior (and warn you) when the context says so. **Don't guess the format — copy it
+from `bin/default_context.json`, which already has one worked example of every type below.**
+
+Two rules:
+1. Put the field value under `records[].fields` in the shape for its type (table below).
+2. **Always declare the field's type** under top-level `fieldMetadata` (`{"<name>":{"dataType":"<Type>"}}`).
+   That declaration is what makes `execute` warn when a read returns ids, and what makes
+   Date/DateTime fields read as real dates.
+
+| Field type | `dataType` | Format in `fields` | Needs |
+|---|---|---|---|
+| Text / Multi-line | `SingleLineText` / `MultiLineText` | `"Title": "Quarterly Report"` | — |
+| Number | `Numeric` | `"Rating": 5` | — |
+| Date / DateTime | `Date` / `DateTime` | `"Expiry": "2026-12-31"` | declare the type so it reads as a date |
+| **Option List** | `OptionList` | `"License": {"value":"opt-id","valuename":"Royalty Free"}` | a **structured value** (id + name) |
+| **Classification List** | `ClassificationList` | `"Dept": "cls-id"` | a matching `classifications` entry |
+| **User List** | `UserList` | `"Author": "user-id"` | a matching `users` entry |
+| **Record List / Record Link** | `RecordList` / `RecordLink` | `"Related": "rec-id"` | a second record in `records` with that `id` |
+| **Text List** | `TextList` | `"Keywords": ["a","b","c"]` | — (an array of strings) |
+
+So a field that needs the two-step (Classification/User/Record) is an **id string in `fields`
+plus the object it points to in a sibling table** (`classifications` / `users` / `records`) — that
+sibling is what `<ref:classification id=...>` / `<ref:user id=...>` / `<ref:record id=...>`
+resolves against. Multi-value list fields use an **array of ids** (and, for Option List, arrays:
+`{"value":["id1","id2"],"valuename":["A","B"]}`).
+
+A complete Option-List example — note the `fieldMetadata` declaration drives both the warning
+and the result:
+```bash
+echo '<ref:record fieldName="License" out="value"/>' | bin/transpiler.exe -mode execute \
+  -context-json '{"records":[{"fields":{"License":{"value":"opt-id","valuename":"Royalty Free"}}}],
+                  "fieldMetadata":{"License":{"dataType":"OptionList"}}}'
+# stderr: field "License" (OptionList): out="value" returns the selected option's id - use out="valuename"...
+# result: "opt-id"            (out="valuename" would give "Royalty Free")
+```
+
+A Classification two-step (the field is an id; the name comes from the `classifications` table):
+```bash
+echo '<ref:record fieldName="Dept" out="value" store="@id"/><ref:classification id="@id" out="name"/>' \
+  | bin/transpiler.exe -mode execute -context-json '{
+      "records":[{"fields":{"Dept":"cls-mktg"}}],
+      "fieldMetadata":{"Dept":{"dataType":"ClassificationList"}},
+      "classifications":[{"id":"cls-mktg","name":"Marketing"}]}'
+# result: "Marketing"
+```
+
+The default context (no `-context-json`) already has `Licensetype` (Option List),
+`PrimaryClassification` (Classification List), `Author` (User List), `RelatedAsset` (Record
+Link), and `Keywords` (Text List) wired up and resolving — run `-mode dump-context` to see the
+whole shape, or just read those fields to see each pattern work.
 
 ## Gotchas
 

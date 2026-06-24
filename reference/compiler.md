@@ -72,6 +72,12 @@ types, user groups, counters, globals, settings, …). `bin/default_context.json
 that same output. Start from it, change the parts your reference touches, and pass it back with
 `-context-json '<json>'` or `-context <file>`.
 
+List/typed fields have a specific format in the context (Option List = structured `{value,
+valuename}`; Classification/User/Record List = an id + a sibling lookup table; Text List = an
+array), and each needs its `dataType` declared in `fieldMetadata`. The default context has one
+worked example of every type — see [`../docs/field.md`](../docs/field.md) (*Representing fields in
+the execution context*) rather than guessing.
+
 You only need to supply the keys you care about — anything you omit falls back to the default. A
 context you pass **replaces** the default wholesale, though, so include every record/user/etc. your
 reference needs (it is not merged key-by-key with the built-in default).

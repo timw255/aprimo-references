@@ -61,6 +61,12 @@ To exercise branches, pass different `-context-json` values (vary `records[0].fi
 attributes like `status`, `createdOnUTC`). `bin/default_context.json` shows the full context shape;
 `-mode dump-context` prints the live default.
 
+**List/typed fields aren't plain strings in the context.** An Option List is a structured
+`{value, valuename}`, a Classification/User/Record List is an id plus a sibling lookup table, a
+Text List is an array — and each field's type goes in `fieldMetadata`. Don't guess the format:
+copy it from `bin/default_context.json` (it has one of every type) — see `docs/field.md`
+(*Representing fields in the execution context*).
+
 ## The rules that matter most
 
 These are where references most often go wrong (read `reference/operators-and-logic.md` for detail):
@@ -68,6 +74,12 @@ These are where references most often go wrong (read `reference/operators-and-lo
 - **Read a field into a variable before you use it.** `<ref:record fieldName="X" out="value"
   store="@xv"/>` first, then reference `@xv`. Using `@xv` before a `store="@xv"` defines it is the #1
   error ("used before defined").
+- **List fields read back ids, not text.** `out="value"` on an Option List, Classification/User/
+  Record List, or Record Link returns the selected object's **id(s)**. Use `out="valuename"` for an
+  Option List; for the others do a two-step read (`<ref:record fieldName="X" out="value" store="@id"/>`
+  then `<ref:classification id="@id" out="name"/>` / `ref:user` / `ref:record`). Declare the field's
+  `dataType` in the context's `fieldMetadata` and the compiler will warn when a read returns ids. See
+  `docs/field.md`.
 - **Variable names need 2+ characters.** A name is `@` + a letter then letters/digits — **at least
   two characters**, no underscores (`@s` and `@a_b` are invalid; use `@status`, `@aVal`). The
   compiler hard-errors on an invalid `store=`, `storeitem=`, or `counter=` name, and a stray `@x`
