@@ -76,4 +76,5 @@ Produces: `"TestField"` (same)
 
 ## See also
 - [`record.md`](record.md) — the primary host for field reads, plus record/file properties.
+- [`../reference/field-configuration.md`](../reference/field-configuration.md) — the field *definition* side: types, default-recompute triggers, scope, storage, and Record-Link traversal (incl. the inverted `valuechildren`/`valueparents` accessors).
 - [`../reference/operators-and-logic.md`](../reference/operators-and-logic.md) — comparing and gating field values.

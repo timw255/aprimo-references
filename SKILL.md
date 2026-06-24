@@ -11,6 +11,13 @@ reference against the real compiler instead of relying on memory — the same wa
 against a linter and test runner. You do not need to have Aprimo memorized; you need to **check
 your work**.
 
+A reference computes a **value**; it doesn't *act* on its own. Goals like expiring assets on a
+date, e-mailing an owner before expiry, firing an HTTP call, or keeping a field in sync run inside
+DAM **fields** and **rules** (triggers, conditions, scheduled nightly checks) — with references
+plugged into the field defaults and rule actions. So when a "write me a reference to do X" request
+is really "how do I accomplish X," recognize it: tell the user which fields/rule they need, then
+write and verify the reference parts. See [`reference/automation-patterns.md`](reference/automation-patterns.md).
+
 ## The non-negotiable workflow
 
 Never hand the user a reference you have not run through the compiler. Always:
@@ -111,6 +118,14 @@ conditional defaults, trimming before numeric compares, date logic), see `refere
   collection to `foreach`). Fiddly multi-level escaping — use only when needed, and verify.
 - `reference/operators-and-logic.md` — comparisons, AND/OR, gating, branching, variable flow, date math.
 - `reference/patterns.md` — proven, compiler-verified recipes for common rule shapes.
+- `reference/automation-patterns.md` — **when one reference isn't enough**: how references sit inside
+  DAM fields and rules (field defaults, Set-field-value / Execute-reference / Send-email actions,
+  Reference-match conditions) and the fields + scheduled-rule recipes for goals like expiration,
+  reminders, and HTTP side-effects. Read this when the ask is really "how do I accomplish X."
+- `reference/field-configuration.md` — **the field side of automation**: field types, default-value
+  recompute triggers, scope, storage/searchability, Record-Link traversal + Metadata Inheritance, and
+  what rules can set vs. read. Read this when a goal hinges on how a field is *configured* (why a
+  default goes stale, why a scheduled rule never matches, how to reach a related record's value).
 - `reference/debugging.md` — the loop for when a reference is wrong/blank/erroring, with a
   symptom → cause → fix table.
 - `reference/compiler.md` — full compiler CLI: every mode, flags, output formats, how to read errors.

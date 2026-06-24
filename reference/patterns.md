@@ -18,7 +18,9 @@ blocks are:
 | `ref:object`, or `ref:text` with children | a block / scope |
 
 (For a fuller intent→idiom lookup — boolean AND/OR/NOT, loops, `try/catch`, what has *no* idiom — see
-[computational-model.md](computational-model.md).)
+[computational-model.md](computational-model.md). When a goal needs state or periodic checks *beyond*
+a single reference — extra fields, a Rule, a nightly schedule — see
+[automation-patterns.md](automation-patterns.md).)
 
 What's worth knowing are the few Aprimo-specific behaviors that aren't obvious from the syntax — they
 decide when grouping actually buys you something:
