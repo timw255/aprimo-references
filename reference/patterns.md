@@ -57,6 +57,49 @@ result. Verified:
 
 So: **storing refs are silent; the only output is what your ungated `text` emits.**
 
+## Set up at the top, emit at the bottom
+
+Do every field read and any variable setup in a block at the **top**, and put your output text
+**last**. This one habit avoids the two things that bite people:
+
+- **Undefined-variable errors.** Reading a variable that was never `store`d throws at run time.
+  Doing all the stores first guarantees each variable exists before it's read. (You usually don't
+  even need to initialize: a field read of a missing or empty field stores `""`, so a field-backed
+  variable is always safe to read — `<ref:record fieldName="Maybe" out="value" store="@m"/>` leaves
+  `@m=""` if `Maybe` doesn't exist, never undefined.)
+- **Stray whitespace.** A line that emits nothing — an init, or a storing field read — placed
+  **between** output lines leaks the surrounding whitespace into the result. The newline *and the
+  indentation* on each side become spaces, with nothing emitted between them:
+
+  ```xml
+  START
+      <ref:text out="" store="@iv"/>
+      END
+  ```
+  → `"START          END"` (verified against Aprimo — a 10-space gap). The **same line at the top**
+  is harmless: leading whitespace is trimmed off the final result, so `"HELLO"` stays `"HELLO"`.
+
+So: **read/compute first (silently), emit last.** Initialize only the variables that are set
+*conditionally* (inside a gate, `switch` item, or `foreach` body, where the `store` might not run) —
+not every variable — and keep those inits in the top block with the field reads:
+
+```xml
+<ref:record fieldName="Status" out="value" store="@status"/>   <!-- field reads: silent, safe -->
+<ref:compare value1="@status" value2="Approved" operator="eq" store="@isHit"/>
+<ref:text out="" store="@picked"/>                             <!-- only the conditionally-set var -->
+<ref:text onVariable="IsNotZero(@isHit)" out="A" store="@picked"/>
+Result: <ref:text out="@picked"/>                              <!-- output begins here -->
+```
+
+Prefer this structure over **minifying** the whole reference onto one line: minifying also removes
+the whitespace, but it costs readability — the top/bottom split keeps the reference legible. If you
+*can't* avoid a silent line mid-output, wrap the read in `ref:catch out=""` instead of initializing.
+
+> One nuance: a variable that took its value from a **missing** field reads as `""` and is safe, but
+> a defined-gate (`onVariable`/`onAllVariables`) treats that as **not set**. An explicit
+> `<ref:text out="" store="@v"/>` makes it count as **set**. So initialize explicitly when you need a
+> defaulted variable to *pass* a gate.
+
 ## Combining conditions with gates
 
 `ref:compare` stores the string **`True`** or **`False`** (not `1`/`0`). You **cannot** feed those
