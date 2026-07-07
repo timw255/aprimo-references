@@ -38,6 +38,12 @@ A **read-only** field with a default reference is the standard "computed field" 
 calculated, never typed. The state flags automations rely on (e.g. `IsNotificationSent`, default
 `No`) are exactly this: read-only, defaulted to a literal.
 
+> **Record Link fields have no default value.** Unlike the other types, the **Record Link** field
+> definition offers **no default-value / reference option** in the field editor — its value is a
+> *bidirectional* link (linking A→B auto-links B→A), so it's established by linking records, not by
+> computing an id. Don't try to default or compute a Record Link. Its **non-bidirectional** cousin
+> **Record List** *can* be defaulted with a reference that returns record id(s).
+
 ## Scope — which records get the field
 
 Scope decides which objects a field is added to. It matters because **rules only set fields that are
@@ -93,7 +99,7 @@ another field; `field="current"` reads the field being validated.)
 | **Number / Text (unique)** | can enforce a **unique identifier** across the system (rebuild the unique-id cache after toggling) |
 | **User / User List** | not settable by a rule; populate via default; can be **filtered** by a reference (e.g. by group) |
 | **Classification List** | not settable by *Set field value*; managed via Link/Unlink actions; can be filtered, and can sync to the record's actual classification links |
-| **Record Link** | relates records — see [Crossing records](#crossing-records) |
+| **Record Link** | relates records (bidirectional); **no default-value option** — populate by linking records, not a computed default. See [Crossing records](#crossing-records) |
 
 **Use UTC for dates that mark a moment** (expiration, deadlines): set the field's *Use UTC* option so
 `Now` comparisons and `out="utcvalue"` line up across time zones.
