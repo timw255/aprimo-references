@@ -2,20 +2,35 @@ name: Release skill
 
 # Cut a release by pushing a version tag, e.g.:
 #   git tag v1.0.0 && git push origin v1.0.0
-# `git archive --prefix` emits a zip whose root is the skill folder, straight from the
-# committed tree (so .git is never included), then it's attached to the GitHub release.
+#
+# Three zips are published, one per host OS. Each one unzips to a folder named
+# `aprimo-references` (the skill name is identical in all three) and differs only in
+# which compiler binaries `bin/` contains:
+#
+#   aprimo-references-windows.zip  transpiler.exe  + transpiler-linux
+#   aprimo-references-macos.zip    transpiler      + transpiler-linux
+#   aprimo-references-linux.zip    transpiler-linux
+#
+# Every bundle carries the Linux binary because the skill also has to run inside
+# Claude's sandbox on claude.ai, which is Linux x86-64 -- so a zip uploaded there from
+# a Windows or Mac machine still works. Shipping all three binaries in one zip would
+# put bin/ at ~36 MB unpacked, over the 30 MB skill limit; hence the split.
+#
+# The binaries are pre-built and committed (the compiler source is not public), so this
+# workflow only repackages the committed tree -- it never compiles anything.
 
 on:
   push:
     tags:
       - "v*"
-  workflow_dispatch: # manual run: builds the zip and uploads it as a workflow artifact
+  workflow_dispatch: # manual run: builds the zips and uploads them as workflow artifacts
 
 permissions:
-  contents: write # needed to create the release and upload the asset
+  contents: write # needed to create the release and upload the assets
 
 env:
   SKILL: aprimo-references
+  MAX_BIN_KB: 30720 # 30 MB -- unpacked bin/ must stay under the skill size limit
 
 jobs:
   package:
@@ -24,21 +39,73 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build skill zip
+      - name: Build per-platform skill zips
         run: |
-          git archive --format=zip --prefix="$SKILL/" -o "$SKILL.zip" HEAD
-          echo "Built $SKILL.zip:"
-          unzip -l "$SKILL.zip"
+          set -euo pipefail
+          ROOT="$PWD"
 
-      - name: Attach zip to the release
+          # Export the committed tree once. tar (not zip) so the executable bit stored
+          # in the git index survives into the staging copy; .gitattributes export-ignore
+          # keeps .github/ and .gitattributes out.
+          rm -rf stage out && mkdir stage
+          git archive --format=tar --prefix="$SKILL/" HEAD | tar -x -C stage
+
+          # $1 = platform name; remaining args = binaries to drop from bin/ for that platform.
+          bundle () {
+            platform="$1"; shift
+            dir="out/$platform"
+            mkdir -p "$dir"
+            cp -a "stage/$SKILL" "$dir/$SKILL"
+            for drop in "$@"; do
+              rm -f "$dir/$SKILL/bin/$drop"
+            done
+
+            kb=$(du -sk "$dir/$SKILL/bin" | cut -f1)
+            if [ "$kb" -gt "$MAX_BIN_KB" ]; then
+              echo "::error::$platform bin/ is ${kb} KB unpacked, over the ${MAX_BIN_KB} KB skill limit"
+              exit 1
+            fi
+
+            ( cd "$dir" && zip -qr9 "$ROOT/$SKILL-$platform.zip" "$SKILL" )
+            printf '%-8s zip %6s   bin/ unpacked %6s   [%s]\n' \
+              "$platform" \
+              "$(du -h "$SKILL-$platform.zip" | cut -f1)" \
+              "$(du -sh "$dir/$SKILL/bin" | cut -f1)" \
+              "$(ls "$dir/$SKILL/bin" | tr '\n' ' ')"
+          }
+
+          bundle windows transpiler
+          bundle macos   transpiler.exe
+          bundle linux   transpiler transpiler.exe
+
+          echo "--- windows zip contents ---"
+          unzip -l "$SKILL-windows.zip"
+
+      - name: Attach zips to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.SKILL }}.zip
+          files: |
+            ${{ env.SKILL }}-windows.zip
+            ${{ env.SKILL }}-macos.zip
+            ${{ env.SKILL }}-linux.zip
+          append_body: true
+          body: |
+            ### Which zip do I download?
 
-      - name: Upload zip as artifact (manual runs)
+            | You run Claude on | Download |
+            |---|---|
+            | Windows (Claude Code / desktop) | `${{ env.SKILL }}-windows.zip` |
+            | macOS (Claude Code / desktop) | `${{ env.SKILL }}-macos.zip` |
+            | Linux, or claude.ai in the browser | `${{ env.SKILL }}-linux.zip` |
+
+            All three unzip to the same `${{ env.SKILL }}/` skill folder. The Windows and
+            macOS bundles also include the Linux binary, so the same download keeps working
+            if you upload the skill to claude.ai (whose sandbox is Linux x86-64).
+
+      - name: Upload zips as artifacts (manual runs)
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SKILL }}-zip
-          path: ${{ env.SKILL }}.zip
+          name: ${{ env.SKILL }}-zips
+          path: ${{ env.SKILL }}-*.zip

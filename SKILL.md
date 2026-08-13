@@ -41,7 +41,9 @@ fine; an unverified reference handed to the user is not.
 
 ## Verifying — the compiler
 
-The compiler is bundled in `bin/` (`transpiler.exe` on Windows, `transpiler` on macOS).
+The compiler is bundled in `bin/`. Use the binary for the OS you are running on wherever the
+examples below say `transpiler.exe`: `bin/transpiler.exe` on Windows, `bin/transpiler` on macOS,
+`bin/transpiler-linux` on Linux — including Claude's own sandbox on claude.ai, which is Linux.
 Input is the bare reference XML on **stdin**. Full details + examples in `reference/compiler.md`.
 
 ```bash

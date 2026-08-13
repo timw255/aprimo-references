@@ -1,8 +1,10 @@
 # The Aprimo compiler (transpiler)
 
-Bundled in `bin/`: use `transpiler.exe` on Windows, `transpiler` on macOS. The reference
-XML is passed on **stdin**; results print to **stdout**. This is your oracle — it decides whether a
-reference is valid and what it produces. Trust it over memory.
+Bundled in `bin/`: use `transpiler.exe` on Windows, `transpiler` on macOS, `transpiler-linux` on
+Linux (Claude's sandbox on claude.ai is Linux x86-64). Substitute that path wherever the examples
+below say `transpiler.exe`. The reference XML is passed on **stdin**; results print to **stdout**.
+This is your oracle — it decides whether a reference is valid and what it produces. Trust it over
+memory.
 
 ## Modes (`-mode`)
 

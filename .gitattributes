@@ -3,5 +3,6 @@
 .gitattributes export-ignore
 
 # Bundled compiler binaries: treat as binary, never apply line-ending filters.
-bin/transpiler     binary
-bin/transpiler.exe binary
+bin/transpiler        binary
+bin/transpiler.exe    binary
+bin/transpiler-linux  binary
