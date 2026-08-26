@@ -14,7 +14,7 @@ Return the current date (`ref:date`) or the current date **and** time (`ref:now`
 | store | (optional) Variable to capture the value. With `store`, nothing is emitted — feed it into `ref:datetimeeval` or `ref:datediff`. |
 | format | (optional) A .NET format string controlling the output (e.g. `yyyy-MM-dd`, `MMM d, yyyy`). Without it, the default culture format is used. |
 
-(`ref:datetime` is accepted as an alias for `ref:now`.)
+(`ref:datetime` is NOT a valid tag - real Aprimo throws an unknown-tag error for it, catchable with `ref:catch`. Use `ref:now`.)
 
 ## Examples
 
