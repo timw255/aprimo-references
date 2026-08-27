@@ -14,8 +14,6 @@ memory.
 | `execute` | Run the reference and return its output | text after `=== Execution Result ===` |
 | `debug` | Run with instrumentation and dump variable state (final, or at `-break N`) | `{"line","variables","callStack","done","error"}` |
 | `analyze` | Structural report (depth, branches, loops, tag counts) | JSON |
-| `ref2js` | Show the JavaScript the reference compiles to | JS source |
-| `execute-js` | Run raw `aprimo.*` JS directly (no reference) | text result |
 | `dump-context` | Print the full default execution context as JSON | JSON |
 
 ## Flags

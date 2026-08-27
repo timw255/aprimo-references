@@ -21,7 +21,7 @@ or, with literal content / nested children:
 | `onAllVariables` / `onAnyVariable` | Gate on whether listed variables are **defined / non-null** (AND / OR). See Gotchas. |
 | `case` | `case="upper"` or `case="lower"` to change the value's case. |
 | `left` / `right` / `padding` | Fit the value into a fixed width. See "Formatting attributes". |
-| `format` | A .NET date format on a date value, or `MB`/`KB`/`GB`/`size` on a file size. See "Formatting attributes". |
+| `format` | `MB`/`KB`/`GB`/`size` on a file-size value. A date value THROWS - use `ref:datetimeeval` with `format=` to format dates. |
 | `encode` | Escape the value for embedding: `html`, `htmlwithbreaks` (html + newlines as `<br />`), `xml` (escapes only `&` `<` `>`), or `json`. |
 | `join` | Separator used when the value is a collection. |
 

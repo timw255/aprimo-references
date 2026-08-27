@@ -33,6 +33,17 @@
   "userGroups": [
     {
       "id": "00db70f9-2fd2-417c-b898-337b7a26641a",
+      "name": "Administrators",
+      "tag": "system_group",
+      "createdonlocal": "2024-01-01T00:00:00",
+      "createdonutc": "2024-01-01T00:00:00Z",
+      "createdby": "system",
+      "modifiedonlocal": "2024-01-01T00:00:00",
+      "modifiedonutc": "2024-01-01T00:00:00Z",
+      "modifiedby": "system"
+    },
+    {
+      "id": "4fd52afa-9267-4df8-88cf-8a696a6258df",
       "name": "Everyone",
       "tag": "system_group",
       "createdonlocal": "2024-01-01T00:00:00",
@@ -152,10 +163,6 @@
     "value": "Test Value",
     "label": "Test Field Label"
   },
-  "collection": {
-    "name": "Test Collection",
-    "id": "10000000-0000-0000-0000-000000000001"
-  },
   "session": {
     "sessionId": "session-abc",
     "languageId": "en-US"
@@ -255,6 +262,19 @@
   ],
   "languages": [
     {
+      "id": "c2bd4f9b-bb95-4bcb-80c3-1e924c9c26dc",
+      "name": "English (US English)",
+      "culture": "en-US",
+      "enabledforfields": true,
+      "tag": "en-US",
+      "createdonlocal": "2019-07-26T12:37:49",
+      "createdonutc": "2019-07-26T16:37:49Z",
+      "createdby": "system",
+      "modifiedonlocal": "2019-07-26T12:37:49",
+      "modifiedonutc": "2019-07-26T16:37:49Z",
+      "modifiedby": "system"
+    },
+    {
       "id": "en-US-guid-001",
       "name": "English (United States)",
       "culture": "en-US",
@@ -316,6 +336,38 @@
     "fiscalYear": 2025
   },
   "classifications": [
+    {
+      "createdby": "system",
+      "createdonlocal": "2019-07-26T12:37:49",
+      "createdonutc": "2019-07-26T16:37:49Z",
+      "id": "d1a04b09-9f54-410d-b1ff-aa9600d024ad",
+      "identifier": "Assets.Stories.Region.NorthAmerica.USA",
+      "label": "USA",
+      "labelPath": "/Assets/Stories/Region/North America/USA",
+      "modifiedby": "system",
+      "modifiedonlocal": "2020-04-14T20:05:52",
+      "modifiedonutc": "2020-04-15T00:05:52Z",
+      "name": "USA",
+      "namepath": "/Assets/Stories/Region/NorthAmerica/USA",
+      "parentid": "44245df4-2028-4305-b064-ab9d014a88f1",
+      "tag": ""
+    },
+    {
+      "createdby": "system",
+      "createdonlocal": "2019-07-26T12:37:49",
+      "createdonutc": "2019-07-26T16:37:49Z",
+      "id": "44245df4-2028-4305-b064-ab9d014a88f1",
+      "identifier": "Assets.Stories.Region.NorthAmerica",
+      "label": "North America",
+      "labelPath": "/Assets/Stories/Region/North America",
+      "modifiedby": "system",
+      "modifiedonlocal": "2019-07-26T12:37:49",
+      "modifiedonutc": "2019-07-26T16:37:49Z",
+      "name": "NorthAmerica",
+      "namepath": "/Assets/Stories/Region/NorthAmerica",
+      "parentid": "",
+      "tag": ""
+    },
     {
       "createdby": "system",
       "createdonlocal": "2024-01-01T00:00:00",

@@ -21,18 +21,10 @@ The skill gives Claude three things:
 
 ## Install
 
-Download the zip for your platform from [Releases](../../releases) and unzip it into your skills
-directory:
-
-| You run Claude on | Download |
-|---|---|
-| Windows | `aprimo-references-windows.zip` |
-| macOS | `aprimo-references-macos.zip` |
-| Linux, or claude.ai in the browser | `aprimo-references-linux.zip` |
-
-All three unzip to the same `aprimo-references/` folder. The Windows and macOS bundles also include
-the Linux binary, so the same download still works if you upload the skill to claude.ai, whose
-sandbox is Linux x86-64.
+Download `aprimo-references.zip` from [Releases](../../releases) and unzip it into your skills
+directory. One universal bundle works everywhere - Windows, macOS, Linux, and claude.ai in the
+browser (its sandbox is Linux x86-64): `bin/` carries all three compiler binaries and the skill
+uses the right one for the host.
 
 For Claude Code, that directory is `~/.claude/skills/` (personal) or `.claude/skills/` (project).
 
@@ -55,8 +47,7 @@ echo '<ref:record fieldName="Status" out="value" store="@s"/><ref:text out="@s"/
 ```
 
 Other modes: `debug` (variable state, optionally at `-break N`), `analyze` (structure report),
-`ref2js` (the JavaScript a reference compiles to), `dump-context` (the default record context).
-See `reference/compiler.md`.
+`dump-context` (the default record context). See `reference/compiler.md`.
 
 ## Contents
 
