@@ -99,7 +99,7 @@ for multi-value fields):
 > Reading the id with `out="value"` is fine (it's the first step above) — the compiler just
 > warns you'll get ids. But `out="valuename"` on anything other than an Option List, or
 > `out="valuechildren"`/`valueparents`/`valuelinks` on anything other than a Record Link,
-> **throws a `ReferenceException`** — verified live against Aprimo. It's catchable: wrap it in
+> **throws a `ReferenceException`**. It's catchable: wrap it in
 > `ref:catch` if you need a fallback. (The compiler reproduces this when the field's `dataType`
 > is declared in the context — see below.)
 

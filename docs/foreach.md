@@ -60,7 +60,7 @@ Produces: `"Designers; Marketing"` (default context)
 
 ## Gotchas
 
-- **Attribute names are case-insensitive.** `storeitem`, `storeItem` and `STOREITEM` all work - verified live. (An earlier version of this page said camelCase was an error; that was a bug in this compiler, not an Aprimo rule.) The tag-specific attributes are `in` and `storeitem`.
+- **Attribute names are case-insensitive.** `storeitem`, `storeItem` and `STOREITEM` all work. The tag-specific attributes are `in` and `storeitem`.
 - **`join` vs. no `join`:** with `join`, items are concatenated using the separator; without it, the body produces a collection (which a text context will then comma-join on its own).
 - **`in` must be defined earlier** with `store=`; an undefined variable is a used-before-defined error.
 - **The `storeitem` itself is CONSUMED at loop end.** Reading it after the loop throws `Variable '@item' does not exist.` - even when the loop ran zero times. Only body `store=` variables survive.

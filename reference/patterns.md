@@ -81,7 +81,7 @@ Do every field read and any variable setup in a block at the **top**, and put yo
       <ref:text out="" store="@iv"/>
       END
   ```
-  → `"START          END"` (verified against Aprimo — a 10-space gap). The **same line at the top**
+  → `"START          END"` (a 10-space gap). The **same line at the top**
   is harmless: leading whitespace is trimmed off the final result, so `"HELLO"` stays `"HELLO"`.
 
 So: **read/compute first (silently), emit last.** Initialize only the variables that are set

@@ -136,7 +136,38 @@ These check whether each listed variable has been **defined** (ever stored — a
 - `onAllVariables="@av; @bv"` resolves only when **every** listed variable is defined (AND).
 - `onAnyVariable="@av; @bv"` resolves when **at least one** is defined (OR).
 
-**Reach for them when the condition spans *several* optional variables.** For a single variable just use `onVariable="IsNotEmpty(@xv)"`. But "only if **both** A and B exist" or "if **any** of A/B/C exist" cannot be written with `onVariable` (one predicate) or `eval` (no boolean AND/OR) — that is exactly what these express.
+> **The tolerance above does NOT extend to `onVariable`.** `onAllVariables`/`onAnyVariable`
+> treat a never-stored variable as absent and carry on, but a predicate throws on one:
+> `onVariable="IsEmpty(@nope)"` raises `Variable '@nope' does not exist.` and aborts the
+> evaluation. `IsNotEmpty`, `IsNull` and the rest behave the same.
+>
+> So a gate meant to run *when nothing has been stored yet* cannot be written as
+> `onVariable="IsEmpty(@acc)"` unless `@acc` was initialised first — seed it with
+> `<ref:text out="" store="@acc"/>`, or use `onAllVariables`/`onAnyVariable`, which
+> tolerate the undefined case by design.
+
+**Reach for them when the condition spans *several* optional variables.** For a single variable just use `onVariable="IsNotEmpty(@xv)"` — but see the warning above if the variable may never have been stored. But "only if **both** A and B exist" or "if **any** of A/B/C exist" cannot be written with `onVariable` (one predicate) or `eval` (no boolean AND/OR) — that is exactly what these express.
+
+### Gates see what the previous line just stored
+
+Gates are evaluated **in document order, against the current state** — an element's gate
+re-reads any variable an earlier element wrote on the same run. The natural
+"append if empty, otherwise concatenate" pair therefore fires **both** times:
+
+```xml
+<ref:text out="B" store="@pt"/>
+<ref:text out="" store="@acc"/>
+<ref:text onVariable="IsEmpty(@acc)"    out="@pt"       store="@acc"/>
+<ref:text onVariable="IsNotEmpty(@acc)" out="@acc_@pt"  store="@acc"/>
+<ref:text out="@acc"/>
+```
+
+Produces `"B_B"`, not `"B"`: line 3 stores `B` into `@acc`, and line 4's gate then sees a
+NON-empty `@acc` and appends again. Write mutually exclusive branches with
+`ref:switch`, or compute the value once and store it once.
+
+A gate that does **not** fire performs **no** `store=` — the variable keeps its previous
+value rather than being cleared.
 
 The pieces become optional via a **gated `store`**: a `store` whose gate is false does **not** assign, so the variable stays undefined. So `<ref:text onVariable="IsNotEmpty(@field)" out="@field" store="@val"/>` defines `@val` *only* when `@field` is populated — and `onAllVariables`/`onAnyVariable` later test exactly that.
 
@@ -306,8 +337,7 @@ To force *intra*-attribute whitespace to be kept (e.g. literal spaces inside a v
 
 ## The order the common attributes run in
 
-When several are present on one tag they apply in this order, live-verified in
-combination:
+When several are present on one tag they apply in this order:
 
 `onEmpty` -> `format` -> `left`/`right` (with `padding`) -> `encode` -> `case` -> `sqlEncoding` -> `result`
 
@@ -390,9 +420,15 @@ at run time, it simply changes what the reference does:
 <ref:text out="@value" onNull="fallback"/>
 ```
 
-The gate attributes are `onVariable`, `onAllVariables`, `onAnyVariable`,
-`onEmpty` and `onNotEmpty`. `onNull`, `onNotNull`, `onZero` and `onNotZero` are
-not attributes and have no effect.
+The gate attributes are `onVariable`, `onAllVariables` and `onAnyVariable`.
+
+`onEmpty` is **not a gate** — it is a fallback VALUE, substituted when the result is
+empty (`out="" onEmpty="FALLBACK"` renders `FALLBACK`; `out="x" onEmpty="FALLBACK"`
+renders `x`). It never decides whether the element runs.
+
+`onNotEmpty` is **not an attribute**. Neither are `onNull`, `onNotNull`, `onZero` and
+`onNotZero`. All of them are silently ignored, so the element behaves exactly as if the
+attribute were absent — the obvious-sounding gate does nothing at all.
 
 `-mode lint` reports every unrecognized attribute as an error, which is the only
 way to detect one before it ships.

@@ -50,7 +50,12 @@ Capture silently with `store`, then emit:
 Produces: `"https://api.aprimo.com"`
 
 ## Gotchas
-- A setting that does not exist resolves to an **empty string** — there is no error and no default.
+- A setting that does not exist **throws**: `No setting found matching the specified criterion.`
+  It does not resolve to an empty string, and there is no default. Wrap the
+  reference in `ref:catch` if the setting may be absent — an uncaught throw aborts the whole
+  evaluation, which is exactly the situation where someone forgot to create the setting.
+- A **present but empty** `name=""` throws the same way; an absent `name=` is the
+  mandatory-attribute error instead.
 - Setting names are matched exactly, including any leading dot (e.g. `.systemName`). Use the exact key as configured.
 - The returned value is the **resolved** value: if a user-level value overrides the system value, the user value is returned.
 - A `store` attribute captures without emitting; pair with an ungated `ref:text` to print. See `../reference/patterns.md`.

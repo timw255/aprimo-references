@@ -40,7 +40,7 @@ Produces: `"1.75"`
 Produces: `"30"` (with `ApprovalDate = 2024-01-01`, `PublicationDate = 2024-01-31`).
 
 ## Gotchas
-| `Years` | Whole anniversaries plus the leftover days over the number of days in the **calendar year of `date2`** (365, or 366 in a leap year). `2023-06-15` to `2023-08-27` is 73/365 = `0.2`; the same 73-day span in 2024 is 73/366 = `0.1994535519125683`. Live-fitted over a 23-case leap-boundary sweep (wave-103). |
+| `Years` | Whole anniversaries plus the leftover days over the number of days in the **calendar year of `date2`** (365, or 366 in a leap year). `2023-06-15` to `2023-08-27` is 73/365 = `0.2`; the same 73-day span in 2024 is 73/366 = `0.1994535519125683`. |
 - **Sign matters.** A negative result means `date1` is *after* `date2`. To test "is the expiration date in the past," put today as `date1` (or check the sign).
 - **`datediff` is lenient about input** (accepts literal date strings in ISO or US format, and date values), unlike `datetimeeval` which requires a typed value.
 - **For simple before/after, you don't need `datediff`** — `ref:compare` works directly on dates (`compare value1="@exp" value2="2026-12-31" operator="gt"`). Use `datediff` only when you need the *amount* of time.

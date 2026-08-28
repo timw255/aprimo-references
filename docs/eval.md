@@ -61,7 +61,7 @@ Arithmetic is double-precision, and dividing by zero produces a **value**, not a
 | `0-100/0` | `-Infinity` |
 | `0/0` | `NaN` |
 
-This is verified live Aprimo behaviour, and it is the most dangerous thing on this page, because the obvious defence does not work:
+This is the most dangerous thing on this page, because the obvious defence does not work:
 
 ```xml
 <!-- WRONG: the catch never fires, and "Infinity" ships into your output -->
