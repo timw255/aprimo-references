@@ -11,7 +11,7 @@ Extracts a substring from a value using a regular expression. Pick which match t
 | Attribute | Description |
 |---|---|
 | in | The text to search (literal or `@variable`). |
-| expression | The regular expression — **.NET regex syntax** (see "Supported syntax"). |
+| expression | The regular expression — **.NET regex syntax** (see "Supported syntax"). Accepts a literal **or an `@variable`**, so the pattern can come from a `ref:setting`. |
 | match | (optional) Which match to return, **1-based**. Defaults to `1`. Returns the **whole match** (not a capture group). |
 | store | (optional) Variable to capture the result. With `store`, nothing is emitted. |
 | replace | Accepted but **ignored** — `ref:regex` only extracts (see Gotchas). |
@@ -69,6 +69,18 @@ Produces: `"001"`
 - **`match` is 1-based** and returns the **whole match**, not a captured group. `match="1"` is the first match.
 - **No match anywhere → error.** If the expression matches nothing in the input, the reference throws — wrap it in [`ref:catch`](catch.md) if a value may not match. (A `match` index *beyond* the available matches, when the pattern *does* match elsewhere, returns `""`.)
 - **The `replace` attribute is a no-op.** `ref:regex` only ever returns a matched substring — it never substitutes. For literal find/replace use [replace.md](replace.md).
+- **An EMPTY pattern matches everything.** `expression=""` matches at position 0 of any
+  input, so it never throws and every item "matches" — a counter built on it silently
+  counts the whole list instead of the hits. This is the realistic failure when the
+  pattern comes from a **setting** that exists but was never populated. Seed a
+  never-matching pattern and only overwrite it when the real one is non-empty:
+
+  ```xml
+  <ref:text out="(?!)" store="@pat"/>
+  <ref:catch ex="System.Exception" out=""><ref:setting name=".kwPatterns" store="@pat"/></ref:catch>
+  <ref:text onVariable="IsEmpty(@pat)" out="(?!)" store="@pat"/>
+  ```
+
 - **An empty result is ambiguous — do not use it to mean "no match".** A *successful*
   zero-width match returns `""` (e.g. `expression="o*"` against `alpha`), and so does a
   `match` index beyond the available matches. Since a genuine no-match **throws** instead,

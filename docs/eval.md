@@ -50,6 +50,16 @@ Substitutes the numeric field values, then evaluates.
 ## Gotchas
 - **Operands must be numeric.** Every term must resolve to a number. A `ref:compare` result is `True`/`False` and will throw "an invalid number was specified" inside eval. Combine conditions with gates, not arithmetic.
 - **`store` suppresses output.** An eval with `store="@val"` prints nothing; only an ungated `ref:text` emits.
+- **The result is a TYPED number, not text.** That matters wherever an attribute requires
+  text — most often `ref:switch keys=`, which throws `Attribute 'keys' has an invalid
+  value '2' for node 'switch'.` The same applies to a `ref:compare` result and to a
+  `foreach` `storeitem`. Launder it through a text pass-through first:
+
+  ```xml
+  <ref:eval expression="@cnt+1" store="@cnt"/>
+  <ref:text out="@cnt" store="@cntText"/>
+  <ref:switch keys="@cntText"> ... </ref:switch>
+  ```
 - **Variables must be defined earlier in document order.** Reading an undefined variable throws at run time (`Variable '@val' does not exist.`) — a catchable error, so wrap risky logic in `ref:catch` when a variable might be missing.
 ### Division by zero does not throw
 
