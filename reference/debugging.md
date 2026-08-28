@@ -115,9 +115,10 @@ Build back up once each piece is confirmed.
     earlier, or wrap the read in `ref:catch` if it may legitimately be unset.
   - `Object has no member 'X'` — usually a wrong-cased `out` value (see below).
 
-  A **missing field** is *not* an error (`ref:record fieldName="X"` reads as `""`), but an
-  unknown-entity **lookup** — `ref:user`/`ref:usergroup`/`ref:classification` by a bad name/id —
-  does throw.
+  A **missing field** read is *not* an error, but it yields **null** (which renders empty). Passing
+  that null on to `ref:switch`, `ref:replace`, `ref:regex`, `ref:count` or `ref:datediff` throws —
+  see [Missing values are null](../docs/overview.md#missing-values-are-null). An unknown-entity
+  **lookup** — `ref:user`/`ref:usergroup`/`ref:classification` by a bad name/id — also throws.
 
 ## Symptom → cause → fix
 
@@ -140,7 +141,6 @@ Some things pass `lint` but misbehave at **runtime** — always `execute` to be 
 
 - Wrong-cased `out` → empty result or an `Object has no member` error.
 - `collection out="value"` → crashes at execution.
-- `foreach` `limit`/`orderBy` → accepted but not applied in this preview.
 - `regex replace` → accepted but ignored.
 
 If lint is green but the output is wrong, the answer is almost always in the table above — run it,

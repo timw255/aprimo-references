@@ -52,5 +52,5 @@ see `operators-and-logic.md`.
   `dynamic-references.md`.)
 - **general recursion** — only `result="ref"` re-resolves, and it is **capped at 3 levels**.
 
-(Other fixed boundaries — the closed `compare`/`eval` operator sets, and block-local `store`s that
+There is NO block scope: a `store` inside a `foreach` body, a `switch` item, a `ref:object` or a `ref:catch` IS readable afterwards. The one exception is the `foreach` `storeitem`, which is consumed at loop end - reading it after the loop throws `Variable '@x' does not exist.`
 don't export past a `foreach`/`switch`/`object`/`catch` — are detailed in `operators-and-logic.md`.)

@@ -40,10 +40,23 @@ Produces: `"1.75"`
 Produces: `"30"` (with `ApprovalDate = 2024-01-01`, `PublicationDate = 2024-01-31`).
 
 ## Gotchas
-- **Every unit is fractional.** `Days`/`Hours`/`Minutes`/`Seconds` are the exact elapsed TimeSpan. **`Years` = total days / 365** (so 546 days → `1.4958…`, *not* calendar years). **`Months`** is calendar-aware: whole months elapsed plus a fractional remainder (e.g. `2026-01-15` → `2026-03-10` is `1.821…`). If you want a whole number, round it yourself (e.g. compare against thresholds).
+| `Years` | Whole anniversaries plus the leftover days over the number of days in the **calendar year of `date2`** (365, or 366 in a leap year). `2023-06-15` to `2023-08-27` is 73/365 = `0.2`; the same 73-day span in 2024 is 73/366 = `0.1994535519125683`. Live-fitted over a 23-case leap-boundary sweep (wave-103). |
 - **Sign matters.** A negative result means `date1` is *after* `date2`. To test "is the expiration date in the past," put today as `date1` (or check the sign).
 - **`datediff` is lenient about input** (accepts literal date strings in ISO or US format, and date values), unlike `datetimeeval` which requires a typed value.
 - **For simple before/after, you don't need `datediff`** — `ref:compare` works directly on dates (`compare value1="@exp" value2="2026-12-31" operator="gt"`). Use `datediff` only when you need the *amount* of time.
 - **`store` suppresses output.** Without `store`, the diff emits directly; with it, emit later via `ref:text`.
 
 See also: [datetimeeval.md](datetimeeval.md), [compare.md](compare.md), and [../reference/patterns.md](../reference/patterns.md).
+
+## Missing dates throw
+
+`date1`/`date2` must resolve to real dates. A field that the record does not
+carry reads as NULL, and `ref:datediff` then throws an invalid-value error
+rather than returning `0`. Gate the whole computation:
+
+```xml
+<ref:record fieldName="Expiry" out="value" store="@expiry"/>
+<ref:object onVariable="IsNotEmpty(@expiry)">
+  <ref:datediff date1="@asOf" date2="@expiry" timeunit="days"/>
+</ref:object>
+```

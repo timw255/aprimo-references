@@ -10,7 +10,7 @@ blocks are:
 
 | Reference | Acts like |
 |---|---|
-| `store="@v"` / `@v` | assignment / read |
+| `store="@val"` / `@val` | assignment / read |
 | `onVariable` / `onAllVariables` / `onAnyVariable` | `if` (see [operators-and-logic](operators-and-logic.md)) |
 | `ref:switch` | `switch` |
 | `ref:catch` | `try` / `catch` |
@@ -35,10 +35,13 @@ decide when grouping actually buys you something:
   unchanged (it does **not** store `""`). That makes conditional assignment and an "if/else that yields
   a value" behave as expected (see *Pick a value by condition* below).
 - **Loose text between tags is literal output and `<ref>` tags interpolate**, so a sentence is a
-  template, not a stack of `ref:text` fragments (`Total: <ref:eval expression="@a*@b"/> items`).
+  template, not a stack of `ref:text` fragments (`Total: <ref:eval expression="@av*@bv"/> items`).
   `@variables` interpolate in **attribute values**, not in loose text.
-- **A container body is its own scope** — a `store` inside a `switch` item or `foreach` body may not be
-  visible afterward; lift it to the outer level if you need it later.
+- **There is no block scope.** Variables live in one flat set, so a `store` inside a `switch` item,
+  `foreach` body, `object` or `catch` **is** readable after the container. It is absent only when
+  that element never executed - a false gate, an untaken branch, or a throw. In particular a
+  `store` on an element that THREW inside a `ref:catch` never happened, so the variable keeps its
+  previous value (or stays undefined) - that is the usual reason a catch "loses" a store.
 
 The rest is the normal call you'd make in any language about when a block clarifies and when it's just
 noise.
@@ -64,9 +67,11 @@ Do every field read and any variable setup in a block at the **top**, and put yo
 
 - **Undefined-variable errors.** Reading a variable that was never `store`d throws at run time.
   Doing all the stores first guarantees each variable exists before it's read. (You usually don't
-  even need to initialize: a field read of a missing or empty field stores `""`, so a field-backed
-  variable is always safe to read — `<ref:record fieldName="Maybe" out="value" store="@m"/>` leaves
-  `@m=""` if `Maybe` doesn't exist, never undefined.)
+  even need to initialize: a field read always stores *something*, so a field-backed variable is
+  never undefined. But a **missing** field stores **null**, not `""` - safe to emit or compare, yet
+  it THROWS if passed to `switch`/`replace`/`regex`/`count`/`datediff`. Add `onEmpty="..."` to the
+  read when the value flows into one of those - see
+  [Missing values are null](../docs/overview.md#missing-values-are-null).)
 - **Stray whitespace.** A line that emits nothing — an init, or a storing field read — placed
   **between** output lines leaks the surrounding whitespace into the result. The newline *and the
   indentation* on each side become spaces, with nothing emitted between them:
@@ -97,7 +102,7 @@ the whitespace, but it costs readability — the top/bottom split keeps the refe
 
 > One nuance: a variable that took its value from a **missing** field reads as `""` and is safe, but
 > a defined-gate (`onVariable`/`onAllVariables`) treats that as **not set**. An explicit
-> `<ref:text out="" store="@v"/>` makes it count as **set**. So initialize explicitly when you need a
+> `<ref:text out="" store="@val"/>` makes it count as **set**. So initialize explicitly when you need a
 > defaulted variable to *pass* a gate.
 
 ## Combining conditions with gates
@@ -170,6 +175,55 @@ Strip it first with `ref:replace`:
 <ref:replace in="@raw" oldValue=" " newValue="" store="@size"/>
 <ref:compare operator="ge" value1="@size" value2="10485760" store="@ok"/>
 ```
+
+## First item of a list
+
+There is no index accessor. Take the first item with a sentinel: initialize a
+variable empty, then let a gated `store` fire only while it is still empty.
+
+```xml
+<ref:record fieldName="TextListTest" out="value" store="@tl"/>
+<ref:text out="" store="@first"/>
+<ref:foreach in="@tl" storeitem="@it" join="">
+  <ref:text onVariable="IsEmpty(@first)" out="@it" store="@first"/>
+</ref:foreach>
+<ref:text out="@first"/>
+```
+
+`join=""` keeps the loop itself from emitting. The `store` survives the loop
+(there is no block scope), so `@first` holds item 1 afterwards.
+
+Two things to know before you rely on it. **An empty first item is skipped** -
+the gate is still true on iteration 2, so you get item 2 instead of `""`. And
+"first" means whatever order the platform hands back - there is no way to sort
+the collection from inside a reference.
+
+Do **not** substitute the shorter-looking `<ref:regex in="@tl" expression="^[^,]+"/>`.
+It relies on the list-to-string coercion, so it splits an item that itself
+contains a comma, and it throws on a null.
+
+## Truncate to N characters
+
+`left="N"` truncates as well as pads, so truncation is just an attribute:
+
+```xml
+<ref:text out="@title" left="30" padding=""/>
+```
+
+`padding=""` is what stops a *short* value from being padded out to 30; without
+it you get trailing spaces. It works on a container too, truncating the assembled
+body:
+
+```xml
+<ref:object left="30" padding=""><ref:text out="@kw"/> / <ref:text out="@tl"/></ref:object>
+```
+
+Caveats: it cuts mid-word with no ellipsis, trailing whitespace inside the cut
+survives (only the final document result is trimmed), and a **null** is skipped
+entirely rather than truncated. `left="0"` is an error. If you need a word
+boundary or an ellipsis, use `ref:regex` instead - `<ref:regex in="@title"
+expression="^.{1,30}"/>` - but note the regex form throws on a null where
+`left=` does not.
 
 ## Crash-safety: wrap in `catch`
 

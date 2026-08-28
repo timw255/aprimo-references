@@ -129,9 +129,10 @@ or regex keys (`<item key="[0-5]">` does NOT match numbers 0–5; it matches the
   least two characters**, so a single letter like `@s` is **not** a valid name. An **underscore ends
   the name** (`@base_Prev` reads the variable `@base` followed by the literal text `_Prev`, and
   `@base_x` reads `@base` then `_x`), so don't put `_` inside a variable you mean to read back.
-- **A missing field reads as empty** (`""`), the same as an empty-but-present field — reading it does
-  not throw, so no `ref:catch` is needed. (Unknown-entity *lookups* — `ref:user`/`ref:usergroup`/
-  `ref:classification` by a bad name/id — do throw.)
+- **A missing field reads as NULL**, which renders empty but is *not* the same as an empty-but-present
+  field. Reading it does not throw, but passing the null to `ref:switch`, `ref:replace`, `ref:regex`,
+  `ref:count` or `ref:datediff` does — see [Missing values are null](../docs/overview.md#missing-values-are-null).
+  (Unknown-entity *lookups* — `ref:user`/`ref:usergroup`/`ref:classification` by a bad name/id — also throw.)
 
 ## Lint-clean is not enough — execute
 
@@ -140,7 +141,6 @@ Some things pass `lint` but misbehave at **runtime**, so always `execute` to con
 - An `out` value with wrong casing (`out="Id"`, `out="Culture"`) lints fine but returns **empty** —
   `out` values must be **lowercase** at runtime.
 - `collection out="value"` lints valid but **crashes** at execution.
-- `foreach` `limit`/`orderBy` lint clean but are **not applied** in the transpiler preview.
 - `regex` accepts a `replace` attribute but **ignores** it (it only ever returns a match) — use
   `ref:replace` for substitution.
 

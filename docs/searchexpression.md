@@ -17,41 +17,51 @@ The emitted result is the `expression` string with each `?` replaced, in order, 
 
 ## Examples
 
+> **The engine NORMALIZES what it emits.** It wraps the whole expression in
+> parentheses, spaces out the operators, lowercases `AND`/`OR`, and **adds the
+> quotes around every substituted value itself**. The output is not the text you
+> typed - if another system consumes the string, expect the normalized form.
+
 Limit a User List field to users whose name begins with `a`:
 ```xml
 <ref:searchExpression expression="name=?" param1="a*"/>
 ```
-Produces: `name=a*`
+Produces: `(name = 'a*')`
 
 Multiple placeholders are filled in order:
 ```xml
 <ref:searchExpression expression="name=? and status=?" param1="a*" param2="active"/>
 ```
-Produces: `name=a* and status=active`
+Produces: `(name = 'a*' and status = 'active')`
 
-Use a value from another field — the **store-then-use** pattern. Here the `Region` field holds `EMEA`:
+Use a value from another field - the **store-then-use** pattern:
 ```xml
 <ref:record fieldName="Region" store="@region"/>
 <ref:searchExpression expression="group.name=?" param1="@region"/>
 ```
-Produces: `group.name=EMEA`
+Produces: `(group.name = 'EMEA')`
 
-Quotes inside the expression — escape with `&quot;`:
+**Never quote the `?`.** A `?` inside quotes is a literal, not a placeholder -
+the parameter is silently dropped with **no error**, and you ship a broken
+search string:
 ```xml
-<ref:searchExpression expression="name = &quot;my name&quot;"/>
+<ref:searchExpression expression="name = '?'" param1="@region"/>
 ```
-Produces: `name = "my name"`
+Produces: `(name = '?')` - the value never appears. Write `expression="name = ?"`.
 
-…or use single quotes:
+**Literal values use SINGLE quotes only.** Double quotes are rejected
+(`The search expression contains an invalid value.`):
 ```xml
 <ref:searchExpression expression="name = 'my name'"/>
 ```
-Produces: `name = 'my name'`
+Produces: `(name = 'my name')`
 
+**Values are escaped for you.** A `'` inside a parameter is doubled
+automatically - `O'Brien` becomes `'O''Brien'`. Do **not** pre-escape it, or you
+will get `'O''''Brien'`.
 ## Gotchas
 - **Parameters are positional.** The Nth `?` is replaced by `paramN`. Provide as many parameters as there are placeholders.
 - **Parameter names must start at `param1` and increment with no gaps** (`param1`, `param2`, …). A maximum of 25 parameters is supported.
-- **Quotes:** since attribute values are XML-quoted, embed literal quotes as `&quot;` or use single quotes inside the expression.
 - **A `@variable` used in a parameter must be defined by a preceding `store`** (e.g. a `ref:record ... store="@region"` line). Otherwise it throws at run time (`Variable '@region' does not exist.`); lint warns about it.
 
 ## See also

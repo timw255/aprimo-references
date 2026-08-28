@@ -107,8 +107,9 @@ These are where references most often go wrong (read `reference/operators-and-lo
   AND/OR/NOT, `try/catch`, counters, date math each have a fixed idiom in
   `reference/computational-model.md`. Note the constructs with **no** idiom: no `while`/unbounded
   loop (a `foreach` count is fixed by its input), recursion only via `result="ref"` capped at 3, and
-  a variable `store`d inside a `foreach`/`switch`/`object`/`catch` may not be readable after it —
-  `store` at the top level if you need it later.
+  variables are **one flat set** - there is no block scope, so a `store` inside a
+  `foreach`/`switch`/`object`/`catch` **is** readable afterwards. It is missing only when the
+  storing element never ran (its gate was false, its switch branch wasn't taken, or it threw).
 - **Externalize config into a setting instead of hardcoding.** Aprimo supports custom setting
   definitions (text/number/xml/reference/…); read any with `ref:setting name="X"`. When a rule
   would carry a big list, a mapping table, environment-specific URLs, or tunable thresholds, prefer
@@ -125,6 +126,11 @@ conditional defaults, trimming before numeric compares, date logic), see `refere
   programming intent (assign, if/else, switch, for-each, AND/OR/NOT, try/catch, recursion, date
   math) into the exact reference idiom, plus data types and the constructs that have no idiom
   (no `while`, recursion capped at 3, block-local vars). Start here to turn intent into refs.
+- `docs/overview.md` — **concepts that span every tag**: syntax basics, variables and scope, gating,
+  the shared attribute pipeline (`onEmpty` -> `format` -> `left`/`right` -> `encode` -> `case`),
+  whitespace rules, and **[Missing values are null](docs/overview.md#missing-values-are-null)** -
+  which tags throw on an absent field and how to guard them. Not a per-tag page, so it is easy to
+  miss; read it before writing anything non-trivial.
 - `reference/catalog.md` — every valid `ref:` tag, what it does, container-vs-leaf, key attributes.
 - `reference/dynamic-references.md` — **advanced**: emitting literal HTML (entity-encoding, the
   `@`-sigil/`@import` collision) and building references as text to re-resolve with `result="ref"`

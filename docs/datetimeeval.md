@@ -51,7 +51,7 @@ With a Date field `ExpirationDate = 2025-06-01`, produces `"5/22/2025"` (date-on
 Produces: `"2027-12-15"`
 
 ## Gotchas
-- **`in` must be a datetime VALUE, never a literal string.** Aprimo's check is type-based, not format-based: `in="2024-01-15"` (or any literal, even one in the exact display format) is **rejected** — it throws. Feed it `@var` from `ref:now`/`ref:date` or a Date/DateTime field. (A value you stored as text — e.g. via `ref:text out="@now" store="@s"` — becomes a string and is also rejected.)
+- **`in` must be a datetime VALUE, never a literal string.** Aprimo's check is type-based, not format-based: `in="2024-01-15"` (or any literal, even one in the exact display format) is **rejected** — it throws. Feed it `@var` from `ref:now`/`ref:date` or a Date/DateTime field. (A value you stored as text — e.g. via `ref:text out="@now" store="@txt"` — becomes a string and is also rejected.)
 - **The default output is the culture format** `M/d/yyyy h:mm:ss tt` (e.g. `12/22/2027 11:49:47 PM`). Use `format="..."` for anything else. The output preserves date-only vs full: a Date field stays date-only (`12/31/2027`), a DateTime field keeps its time.
 - **Month/year math CLAMPS to month-end.** `addMonths="1"` on Jan 31 returns Feb 28 (not Mar 3); `addYears` on Feb 29 lands on Feb 28 in a non-leap year.
 - **`store` suppresses output.** With `store="@val"` nothing prints; emit it later with `ref:text out="@val"`.

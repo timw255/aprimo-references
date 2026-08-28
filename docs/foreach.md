@@ -4,7 +4,7 @@ Iterates over the items of a collection, running its body once per item. With `j
 
 ## Syntax
 ```xml
-<ref:foreach in="@collection" storeitem="@item" [join=", "] [limit="N"] [orderBy="@item"]>
+<ref:foreach in="@collection" storeitem="@item" [join=", "]>
     ...body, referencing @item...
 </ref:foreach>
 ```
@@ -13,10 +13,8 @@ Iterates over the items of a collection, running its body once per item. With `j
 | Attribute | Description |
 |---|---|
 | `in` | The collection to iterate — usually a list-field value stored into a variable first. |
-| `storeitem` | Variable holding the current item each pass, so the body can read its properties. **Lowercase** — `storeItem` is rejected. |
+| `storeitem` | Variable holding the current item each pass, so the body can read its properties. Name is case-insensitive (`storeItem` works). |
 | `join` | (optional) Separator for joining each item's output into one string. Without it, the output is a collection. |
-| `limit` | (optional) Maximum number of items to process (applied by the Aprimo runtime). |
-| `orderBy` | (optional) Sort the items before iterating (applied by the Aprimo runtime). |
 
 ## Examples
 
@@ -29,14 +27,18 @@ Iterates over the items of a collection, running its body once per item. With `j
 ```
 Produces: `"Acme, Globex, Initech"` (context: `{"records":[{"fields":{"Brands":["Acme","Globex","Initech"]}}]}`)
 
-**Without `join`, you get a collection** (here coerced to its default comma form by the text context):
+**Without `join` you get a COLLECTION, and emitting it prints a .NET type name** - not the
+items. This is real Aprimo behaviour, and a common way to ship a broken filename or label:
 ```xml
 <ref:record fieldName="Brands" out="value" store="@brands"/>
 <ref:foreach in="@brands" storeitem="@item">
     <ref:text out="@item"/>
 </ref:foreach>
 ```
-Produces: `"Acme,Globex"` (context: `{"records":[{"fields":{"Brands":["Acme","Globex"]}}]}`)
+Produces: `"System.Collections.Generic.List`1[System.Object]"` - **always supply `join`** when the loop output is emitted.
+
+To render a list *without* a loop, emit the variable directly: `<ref:text out="@brands"/>`
+coerces it to `"Acme, Globex"` - the separator is a comma **and a space**.
 
 **Read a per-item property inside the loop.** For collections of objects (user lists, classification lists), resolve each item with the matching reference. Here, the current user's groups joined with a custom separator:
 ```xml
@@ -58,13 +60,31 @@ Produces: `"Designers; Marketing"` (default context)
 
 ## Gotchas
 
-- **`storeitem` is lowercase.** `storeItem` (camelCase) is a parse error: `ref:foreach has invalid attribute 'storeItem'`. The valid tag-specific attributes are exactly `in`, `storeitem`, `limit`, `orderBy`.
+- **Attribute names are case-insensitive.** `storeitem`, `storeItem` and `STOREITEM` all work - verified live. (An earlier version of this page said camelCase was an error; that was a bug in this compiler, not an Aprimo rule.) The tag-specific attributes are `in` and `storeitem`.
 - **`join` vs. no `join`:** with `join`, items are concatenated using the separator; without it, the body produces a collection (which a text context will then comma-join on its own).
-- **`limit`/`orderBy` are runtime concerns.** They lint clean and are accepted, but ordering and truncation are applied by the live Aprimo runtime — this transpiler does not reorder or truncate the output, so don't expect its preview to reflect them.
 - **`in` must be defined earlier** with `store=`; an undefined variable is a used-before-defined error.
-- **Variables stored inside the loop may not survive it.** If you need a running total or a value afterward, prefer `ref:increment`/top-level stores; treat the loop body as per-item scope.
+- **The `storeitem` itself is CONSUMED at loop end.** Reading it after the loop throws `Variable '@item' does not exist.` - even when the loop ran zero times. Only body `store=` variables survive.
+- **A `store` inside the loop body DOES survive the loop.** There is no block scope in references (see [`../reference/patterns.md`](../reference/patterns.md)) - the variable holds whatever the last iteration that executed the element assigned. This is what makes the sentinel "first item" idiom work, and it means you do not need `ref:increment` just to carry a value out of a loop. The one thing that does not survive is an element that never ran: if a gate suppressed it on every iteration, its variable was never created and reading it throws.
 
 ## See also
 - [`record.md`](record.md) — reading the list field you iterate, and per-item file/version properties.
 - [`switch.md`](switch.md) — branching on each item's value inside the loop body.
 - [`../reference/patterns.md`](../reference/patterns.md) — building delimited strings and joining collections.
+
+## Switching on the loop item
+
+`switch keys="@item"` directly on a `storeitem` does **not** work - a loop item
+is a typed value and `keys=` needs text. Re-store the item through `ref:text`
+first, then switch on the copy:
+
+```xml
+<ref:foreach in="@tags" storeitem="@tag" join=", ">
+  <ref:text out="@tag" store="@tagKey"/>
+  <ref:switch keys="@tagKey">
+    <item key="alpha">A</item>
+    <default>other</default>
+  </ref:switch>
+</ref:foreach>
+```
+
+The same applies to `ref:compare value1="@tag"` - compare the re-stored copy.

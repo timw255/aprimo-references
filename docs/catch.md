@@ -57,11 +57,24 @@ Produces: `"user not found with name: Unknown"`
 ```
 Produces: `"0"` when `@count` was never stored (the `eval` throws and the fallback wins); otherwise the computed number.
 
-> Reading a **missing field** does *not* throw — `<ref:record fieldName="Missing" out="value"/>` simply reads as empty — so you don't need `catch` for that; use it for operations that genuinely error.
+> Reading a **missing field** does *not* throw — `<ref:record fieldName="Missing" out="value"/>` renders empty. But the value it produces is **null**, not `""`, and passing that null on to `ref:switch`, `ref:replace`, `ref:regex`, `ref:count` or `ref:datediff` *does* throw. See [Missing values are null](overview.md#missing-values-are-null).
 
 ## Gotchas
+- **A `store` on an element that threw never happened.** The catch swallows the
+  error, but the variable the failed element was supposed to set does not exist,
+  so the next read of it fails with `Variable '@x' does not exist.` - and *that*
+  error is outside the catch. If a store inside a catch matters afterwards,
+  initialize it **before** the catch:
 
-- **The attribute is `ex`, not `type`.** `type="System.Exception"` is a parse error (`ref:catch has invalid attribute 'type'`). Only `ex` and `out` are valid.
+  ```xml
+  <ref:text out="0" store="@cn"/>
+  <ref:catch ex="System.Exception" out=""><ref:count in="@maybe" store="@cn"/></ref:catch>
+  ```
+
+  This is the usual reason a catch appears to "lose" a store.
+
+
+Besides `ex` and `out`, `ref:catch` also accepts `store=` - verified live, whether or not the catch fires. As everywhere else, `store=` suppresses the element's own emission. The common formatting attributes (`left`, `right`, `case`, ...) are accepted but have NO effect on a catch.
 - **`System.Exception` catches everything; a narrower `ex` matches only that exact type.** `ex="System.ArgumentException"` catches an `ArgumentException` but lets a `ReferenceException` propagate; a mismatched or base type (e.g. `System.SystemException`) does **not** catch. Use `ex="System.Exception"` for a never-fail rule.
 - **Wrap the whole rule, not just one read.** For a rule that must always return a value, put all the logic inside one `catch` with the safe default as `out` (e.g. `out="false"`). Any exception anywhere inside resolves to that value.
 - **`out` is only emitted on error.** When the children succeed, their output is returned and `out` is ignored — so don't use `out` as an "else" branch for non-error logic; use gated `ref:text` for that.

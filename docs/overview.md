@@ -54,7 +54,7 @@ Total: <ref:eval expression="2*5"/> items
 Produces `Total: 10 items`. This works at the top level and inside containers (`<ref:object>GPS: <ref:eval.../></ref:object>`), and it is how file-naming and email-style references are normally written.
 
 Two rules to remember:
-- **Loose text is literal — `@variables` are NOT interpolated in it** (only attribute values interpolate). `<ref:text out="42" store="@n"/> value=@n` produces `value=@n`, not `value=42`. To emit a variable, read it with a reference: `<ref:text out="@n"/>`.
+- **Loose text is literal — `@variables` are NOT interpolated in it** (only attribute values interpolate). `<ref:text out="42" store="@num"/> value=@num` produces `value=@num`, not `value=42`. To emit a variable, read it with a reference: `<ref:text out="@num"/>`.
 - **`out=` and a body are mutually exclusive.** `<ref:text out="A">B</ref:text>` is rejected — use the attribute *or* a body, not both.
 
 **Whitespace:** each newline, carriage return, and tab in the source renders as **a single space**; runs of literal spaces are preserved as-is; and only the **overall result** is trimmed at its very start and end (containers do not trim their own body). So indented, multi-line references stay readable without injecting stray newlines, but multiple spaces you type on purpose are kept.
@@ -131,14 +131,14 @@ Emits `some text` because `@Hello` is non-empty. (Verified.)
 
 ### `onAllVariables` / `onAnyVariable` — gating on whether variables are *defined*
 
-These check whether each listed variable has been **defined** (ever stored — a variable stored as `""` still counts), **not** whether it has content and **not** whether it is true. List names bare, semicolon-separated. A variable that was *never stored* is treated as absent (false) and does **not** error.
+These check whether each listed variable has been **defined** (ever stored — a variable stored as `""` still counts), **not** whether it has content and **not** whether it is true. List names bare, separated by `;` OR `,` (whitespace around names is trimmed; a SPACE is not a separator). A variable that was *never stored* is treated as absent (false) and does **not** error.
 
-- `onAllVariables="@a; @b"` resolves only when **every** listed variable is defined (AND).
-- `onAnyVariable="@a; @b"` resolves when **at least one** is defined (OR).
+- `onAllVariables="@av; @bv"` resolves only when **every** listed variable is defined (AND).
+- `onAnyVariable="@av; @bv"` resolves when **at least one** is defined (OR).
 
-**Reach for them when the condition spans *several* optional variables.** For a single variable just use `onVariable="IsNotEmpty(@x)"`. But "only if **both** A and B exist" or "if **any** of A/B/C exist" cannot be written with `onVariable` (one predicate) or `eval` (no boolean AND/OR) — that is exactly what these express.
+**Reach for them when the condition spans *several* optional variables.** For a single variable just use `onVariable="IsNotEmpty(@xv)"`. But "only if **both** A and B exist" or "if **any** of A/B/C exist" cannot be written with `onVariable` (one predicate) or `eval` (no boolean AND/OR) — that is exactly what these express.
 
-The pieces become optional via a **gated `store`**: a `store` whose gate is false does **not** assign, so the variable stays undefined. So `<ref:text onVariable="IsNotEmpty(@field)" out="@field" store="@v"/>` defines `@v` *only* when `@field` is populated — and `onAllVariables`/`onAnyVariable` later test exactly that.
+The pieces become optional via a **gated `store`**: a `store` whose gate is false does **not** assign, so the variable stays undefined. So `<ref:text onVariable="IsNotEmpty(@field)" out="@field" store="@val"/>` defines `@val` *only* when `@field` is populated — and `onAllVariables`/`onAnyVariable` later test exactly that.
 
 **Best practice: wrap the optional block in a `ref:object` (or a `ref:text` with children) and gate the container once**, rather than repeating the gate on every child:
 
@@ -222,7 +222,17 @@ Returns `8.02 GB` for an 8,024,484,544-byte file.
 ```
 Returns the user's group names joined by a dash.
 
-### Alignment (`left` / `right` / `padding`)
+### Alignment and truncation (`left` / `right` / `padding`)
+
+`left="N"` and `right="N"` set a value to **exactly N characters**: they pad a
+shorter value and **truncate a longer one**. Truncation is not opt-in and is not
+what `padding=""` controls - `padding=""` only suppresses the padding of short
+values. If you came here looking for "truncate to N characters", this is it; see
+the recipe in [`../reference/patterns.md`](../reference/patterns.md).
+
+`left="0"` is rejected (`Attribute 'left' has an invalid value '0'`), the count is
+in characters rather than bytes, and a **null** value is skipped entirely - so
+`left=` cannot be used to guarantee a fixed width when the field may be missing.
 
 ```xml
 <ref:text out="test" left="10" />
@@ -243,6 +253,11 @@ Returns `test` (empty padding ⇒ no padding).
 <ref:text out="very long test" left="10" padding="" />
 ```
 Returns `very_long_` (truncated to 10).
+
+```xml
+<ref:text out="very long test" left="10" />
+```
+Also returns `very_long_`. Truncation happens with or without `padding=""`.
 
 ```xml
 <ref:text out="23" right="4" padding="0" />
@@ -288,6 +303,180 @@ To force *intra*-attribute whitespace to be kept (e.g. literal spaces inside a v
 ```xml
 <ref:text xml:space="preserve"> Hello World </ref:text>
 ```
+
+## The order the common attributes run in
+
+When several are present on one tag they apply in this order, live-verified in
+combination:
+
+`onEmpty` -> `format` -> `left`/`right` (with `padding`) -> `encode` -> `case` -> `sqlEncoding` -> `result`
+
+Two consequences that surprise people:
+
+- **Padding happens BEFORE encoding.** `out="a&b" left="8" padding="."` pads the
+  raw 3-character value to `a&b.....` and encodes that, giving `a&amp;b.....` -
+  which is 12 characters, not 8. Width is counted on the value, not the output.
+- **`case=` applies after `encode=`**, so it upper-cases the entity itself:
+  `encode="html" case="upper"` turns `a&b` into `A&AMP;B`.
+
+`left` and `right` both apply when both are given, left first: `left="4"
+right="2"` on `abcdefgh` yields `abcd` then `cd`.
+
+## Choosing a gate: `IsEmpty` vs `IsNull`
+
+The two look interchangeable and are not. They differ on exactly the distinction
+in the table above:
+
+| Field state | `IsEmpty` | `IsNull` |
+|---|---|---|
+| has a value | false | false |
+| on the record, no value (blank) | **true** | **false** |
+| not on the record at all | **true** | **true** |
+
+So `IsEmpty` means "nothing to show" and `IsNull` means "the field is not there".
+
+Use **`IsEmpty`** for almost everything - it is the one that covers a blank field,
+which is the ordinary state of anything a user has not filled in. Reach for
+`IsNull` only when you specifically need to detect a field that the record does
+not carry, for example to tell a genuinely absent field apart from a blank one.
+
+A gate takes exactly one function on one variable. A bare `onVariable="@flag"` is
+not a gate, and neither are `onNull`, `onNotNull`, `onZero` or `onNotZero`.
+
+## Which tags take a body
+
+Only `ref:object`, `ref:foreach`, `ref:switch`, `ref:catch` and `ref:text`
+*without* `out=` accept child content. Every other tag is a leaf, and giving one a
+body throws:
+
+```
+Node 'ref:eval' contains nested elements which it does not support.
+```
+
+Two details that catch people out:
+
+- **Whitespace counts.** `<ref:eval expression="2">   </ref:eval>` throws just
+  like a real child would. Only a body with no character data at all is clean, so
+  `<ref:text out="A"></ref:text>` is fine but `<ref:text out="A">   </ref:text>`
+  is not.
+- **`ref:text` with both `out=` and a body** gets its own message: `Node 'text'
+  has at least two conflicting attributes which cannot be used together. One of
+  these attributes is 'out'.` Use one or the other. `<ref:text>BODY</ref:text>`
+  with no `out=` is a perfectly ordinary template.
+
+## A duplicate attribute stops the reference deploying
+
+Repeating an attribute - `encode="html" encode="json"`, or `out=` and `OUT=`,
+which are the same attribute since names fold case - is worse than an error at
+run time. **Aprimo refuses to save the reference at all.** The field keeps its
+previous default value, the old reference keeps running, and nothing anywhere
+reports a problem. The change simply does not take effect.
+
+`-mode lint` reports this as an error. It is the one class of mistake where a
+clean-looking deployment is silently the old behaviour.
+
+## Attribute names fold case, and unknown ones are ignored
+
+Attribute names fold case - `out`, `OUT` and `Out` are the same attribute, as are
+`storeitem`/`storeItem` and `fieldname`/`fieldName`. Casing is never the problem.
+
+An attribute name no tag recognizes is **ignored**: Aprimo neither warns nor
+fails, it runs the reference without it. A typo therefore has no visible symptom
+at run time, it simply changes what the reference does:
+
+```xml
+<!-- onNull is not an attribute. There is no error, and the text renders
+     unconditionally, because no gate was applied. -->
+<ref:text out="@value" onNull="fallback"/>
+```
+
+The gate attributes are `onVariable`, `onAllVariables`, `onAnyVariable`,
+`onEmpty` and `onNotEmpty`. `onNull`, `onNotNull`, `onZero` and `onNotZero` are
+not attributes and have no effect.
+
+`-mode lint` reports every unrecognized attribute as an error, which is the only
+way to detect one before it ships.
+
+## Missing values are null - but "blank" usually is not
+
+A field can be missing in two different ways, and they do **not** behave the
+same. Getting this backwards is the most common source of a reference that works
+in testing and throws on a real record:
+
+| The field is... | Reads as | `count` | `replace` / `regex` | `left=` / `right=` |
+|---|---|---|---|---|
+| **on the record, no value** (a blank field) | **empty** | `0` | runs, returns empty | pads |
+| **not on the record at all** | **null** | throws | throws | skipped |
+
+A blank field on a content class - the normal state of anything a user has not
+filled in yet - is **empty**, not null. `IsEmpty` is true for both, so the
+ordinary guard covers both cases. The throwing behaviours below apply only to the
+second row: a field that is genuinely not there (wrong `fieldName`, a field on a
+different content class, a typo).
+
+That is also why `fieldName=` typos are so costly - a misspelled field is not
+"blank", it is absent, and the first `ref:count` or `ref:switch` that touches it
+throws.
+
+Reading a field the record does not carry is **not** an error and renders
+nothing - but the value is **null**, which is not the same as an empty string.
+The distinction only shows up when you pass that value on, and then it matters
+a lot: some tags dereference it and throw.
+
+**These THROW on a null** (guard them):
+
+| Tag | What happens |
+|---|---|
+| `ref:switch keys="@v"` | `Attribute 'keys' has an invalid value '' for node 'switch'.` It does **not** fall through to `<default>`. |
+| `ref:replace in="@v"` | `Object reference not set to an instance of an object.` |
+| `ref:regex in="@v"` | same null-reference error |
+| `ref:count in="@v"` | `Attribute 'in' has an invalid value '' for node 'count'.` |
+| `ref:datediff date1/date2` | invalid-value error naming the attribute |
+
+**These are safe** — a null behaves like empty: `out="@v"` (renders nothing),
+`encode=`, `case=`, `ref:compare` (compares as `""`), `onEmpty=` (fires),
+`IsEmpty` (true). `left=`/`right=` and `sqlEncoding=` are **skipped** entirely,
+so no padding is applied and no conversion is attempted. A null used as a
+`ref:searchExpression` `paramN` leaves its `?` placeholder unsubstituted.
+
+`IsNotNull` is **false** on it, and the `onAllVariables`/`onAnyVariable` gates —
+which test for non-null, not merely "defined" — do not treat it as satisfied.
+
+### Is it even a field?
+
+Before guarding, check that the name is a **field** at all. `status`, `contenttype`,
+`id`, `createdby`, `createdon*` and `modifiedon*` are record **properties**, read
+with `out="..."` - `<ref:record out="status"/>`. Writing `fieldName="Status"` looks
+for a metadata field of that name, which usually does not exist, so it reads null.
+Guarding that null with `onEmpty="Unknown"` produces a reference that lints clean,
+never errors, and is **permanently wrong**. See
+[record properties](record.md#record-properties).
+
+### Guarding
+
+Give the read a fallback so the value is never null downstream:
+
+```xml
+<ref:record fieldName="Licensetype" out="valuename" onEmpty="Unknown" store="@lic"/>
+<ref:switch keys="@lic">
+  <item key="Royalty Free">RF</item>
+  <default>UNKNOWN</default>
+</ref:switch>
+```
+
+or gate the whole fragment:
+
+```xml
+<ref:record fieldName="Licensetype" out="valuename" store="@lic2"/>
+<ref:object onVariable="IsNotEmpty(@lic2)">
+  <ref:switch keys="@lic2">...</ref:switch>
+</ref:object>
+```
+
+An uncaught throw aborts the **entire** reference, so a status badge that works
+on records where the field is populated will silently produce nothing on the
+records where it is not. This is the most common way a reference that "works"
+in testing fails in production.
 
 ## Aprimo DAM global variables
 

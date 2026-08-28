@@ -33,7 +33,7 @@ doubt, read the doc — then verify with the compiler.
 |---|---|---|---|---|
 | `compare` | leaf | Compare two values → stores 1/0 result | `value1`, `value2`, `operator`, `store` | compare.md |
 | `switch` | container | Multi-way branch; children are `<item key="...">` and `<default>` | `keys` | switch.md |
-| `foreach` | container | Loop a collection, emit per item | `in`, `storeitem`, `join`, `limit`, `orderBy` | foreach.md |
+| `foreach` | container | Loop a collection, emit per item | `in`, `storeitem`, `join` | foreach.md |
 | `catch` | container | Run children, fall back to `out` on error | `ex`, `out` | catch.md |
 | `object` | container | Group/scope children (often for gating a block) | `onVariable`, `onAllVariables`, `onAnyVariable` | object.md |
 
@@ -68,7 +68,7 @@ doubt, read the doc — then verify with the compiler.
 | `collection` | leaf | Collection lookup/attributes | collection.md |
 | `classification` | leaf | Classification lookup (label/path) | classification.md |
 | `filetype` | leaf | File type lookup | filetype.md |
-| `searchexpression` | leaf | Build/run a search expression | searchexpression.md |
+| `searchExpression` | leaf | Build a search expression string | searchexpression.md |
 
 ## Integration & jobs
 
@@ -92,6 +92,8 @@ Most leaf tags accept these in addition to their specific ones:
 - `out="..."` — which value/attribute to emit
 - `format="..."` — a .NET date format on a date value, or `MB`/`KB`/`GB`/`size` on a file size (use `case="upper"`/`"lower"` for case)
 - `onVariable` / `onAllVariables` / `onAnyVariable` — gate: only emit if the condition holds
+- `onEmpty="..."` — value to emit when the result is empty **or null**; the main guard for a field
+  that may be absent (see [Missing values are null](../docs/overview.md#missing-values-are-null))
 - `join`, `left`, `right`, `padding`, `encode` — formatting/joining helpers
 
 If the compiler says an attribute is invalid, it lists the ones that tag accepts — use those.

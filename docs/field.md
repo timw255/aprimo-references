@@ -161,7 +161,7 @@ whole shape, or just read those fields to see each pattern work.
 ## Gotchas
 
 - **Casing is enforced.** `fieldName`/`fieldID`/`languageID`/`languageName` are the exact spellings; `fieldname`, `fieldId`, `languageId` are all rejected at lint time.
-- **A missing field reads as empty.** Selecting a field that doesn't exist (`fieldName="Nope"`) returns `""`, just like an empty-but-present field — it is not an error. A reference reading a missing field still runs, so you don't need `ref:catch` for that.
+- **A missing field reads as NULL, which renders empty.** Selecting a field that doesn't exist (`fieldName="Nope"`) is not an error and renders nothing, but the value is **null** — which is *not* the same as an empty-but-present field. Feeding that null to `ref:switch`, `ref:replace`, `ref:regex`, `ref:count` or `ref:datediff` throws. See [Missing values are null](overview.md#missing-values-are-null).
 - **`label` falls back to the name** when no separate label is defined in context.
 - **Multi-value fields return a collection.** It auto-joins with commas in a text context; to control the separator or read per-item properties, feed it to [`ref:foreach`](foreach.md).
 - **You can't `<ref:field>`.** There is no standalone field tag — these attributes live on a host reference such as `ref:record`.

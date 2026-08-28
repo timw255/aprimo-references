@@ -68,7 +68,10 @@ Produces: `"00db70f9-2fd2-417c-b898-337b7a26641a"`
 
 ## Gotchas
 - **`out` values are lowercase and case-sensitive at runtime.** `out="Id"` passes `lint` but resolves to an **empty string** when executed; use `out="id"`. Trigger the lint error with an invalid value (e.g. `out="ZZZ"`) to print the full valid set.
-- A lookup that matches no group resolves to an empty string rather than erroring.
+- **A lookup that matches no group THROWS** - `No user group has been found matching the specified
+  criterion.` It does not resolve to an empty string. An uncaught throw aborts the whole reference,
+  so guard any lookup that might miss:
+  `<ref:object store="@grp"><ref:catch ex="System.Exception" out="unassigned"><ref:usergroup name="@nm" out="name"/></ref:catch></ref:object>`
 - A `store` attribute captures without emitting; pair with an ungated `ref:text` to print. See `../reference/patterns.md`.
 
 ## See also

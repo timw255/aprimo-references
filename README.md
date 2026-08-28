@@ -42,7 +42,7 @@ echo '<ref:record fieldName="Title" out="value" store="@title"/><ref:text out="@
 echo '<ref:text out="Hello"/>' | bin/transpiler -mode execute
 
 # Run it against your own record data
-echo '<ref:record fieldName="Status" out="value" store="@s"/><ref:text out="@s"/>' \
+echo '<ref:record fieldName="Status" out="value" store="@st"/><ref:text out="@st"/>' \
   | bin/transpiler -mode execute -context-json '{"records":[{"fields":{"Status":"Approved"}}]}'
 ```
 

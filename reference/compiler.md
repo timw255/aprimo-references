@@ -21,9 +21,22 @@ memory.
 - `-mode <mode>` — operation (default `execute`)
 - `-context-json '<json>'` — execution context as an inline JSON string (for `execute`)
 - `-context <file>` — execution context from a file
-- `-i <file>` / `-o <file>` — read input / write output from files instead of stdin/stdout
+- `-i <file>` - read the reference from a file instead of stdin
+- `-o <file>` - write stdout to a file instead. Prefer this over shell redirection when the bytes matter: PowerShell's `>` prepends a UTF-8 BOM, which corrupts a byte comparison. Diagnostics still go to stderr, so the file holds only the result.
+
+A leading UTF-8 BOM on an INPUT file is ignored (Windows editors add one by default).
 - `-batch` — read many inputs from stdin, one per line (for bulk `lint`)
 - `-break <N>` — for `-mode debug`: pause at XML line `N` (default `0` = run to the end)
+
+
+### `lint` is not a superset of `execute`
+
+`execute` runs the same static checks as `lint` **plus** the ones that need a
+context - most importantly the field-type warnings, which are what catch the
+classic "`out="value"` on a Classification List returns ids, not names" bug.
+Lint has no context, so it cannot produce those. Lint every reference, but run it
+through `execute` with a realistic context before you ship it; a clean lint is
+necessary, not sufficient.
 
 ## LINT — do this first
 
@@ -85,6 +98,58 @@ reference needs (it is not merged key-by-key with the built-in default).
 This is the one place that documents how to populate the context; `dump-context` is the live source
 of truth for the exact shape, and each tag's own `docs/*.md` names the key it reads (e.g.
 `setting.md` → `settings`, `dict.md` → `dictionary`) with a tag-specific example.
+
+#### Localized fields
+
+A field value is stored under a LANGUAGE. A reference evaluated in a different
+language **cannot read that field at all** - it throws
+`Object reference not set to an instance of an object.` for every `out=`
+projection, and an uncaught throw aborts the whole reference. A field default
+value evaluates in the NEUTRAL language, so a field whose value sits under a
+specific language is unreadable there no matter what you do to the reference.
+
+```jsonc
+{
+  "languageId": "",                       // language this reference runs as; "" = neutral
+  "fieldMetadata": {
+    "Keywords":     {"dataType": "TextList", "languageId": "c2bd…"},  // localized -> throws
+    "TextListTest": {"dataType": "TextList"}                          // neutral -> readable
+  }
+}
+```
+
+Values stored under the neutral language are readable from any evaluation
+language; anything else must match exactly. If a field reads as an unexplained
+`Object reference not set…`, check its language before anything else.
+
+#### Modelling a field's STATE, not just its value
+
+A reference behaves differently depending on *how* a field is missing, so the
+context has to be able to say which case you mean. It does, and the distinction
+is the presence of the **key**:
+
+```jsonc
+{"records": [{"fields": {
+  "Keywords":  ["a", "b"],   // has a value
+  "Channels":  null,          // EXISTS on the record, holds nothing -> EMPTY
+                              // (count = 0, replace runs, left= pads)
+  // "Region" omitted entirely -> NOT on the record -> NULL
+                              // (count throws, replace throws, left= is skipped)
+}}]}
+```
+
+A key present with `null` is a **blank field** - the normal state of anything a
+user has not filled in - and it is *empty*, not null. A key that is simply not
+there is a field the record does not carry, which is what a `fieldName=` typo
+looks like. See [`../docs/overview.md`](../docs/overview.md) for the full table.
+
+The empty value takes its shape from `fieldMetadata`: declare a `dataType` ending
+in `List` and a blank field becomes an empty collection (`ref:count` answers `0`,
+`ref:foreach` iterates zero times); anything else becomes the empty string. Without
+a declared `dataType` a blank field is the empty string.
+
+Test both states before shipping. Most references are written against a fully
+populated record and meet a half-filled one in production.
 
 #### Modifying the context
 
