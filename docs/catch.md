@@ -20,7 +20,7 @@ Inside `out`, these variables are available when an error is caught:
 | Variable | Resolves to |
 |---|---|
 | `@adamError` | The complete exception (type, message, and stack trace). |
-| `@adamErrorMessage` | Just the message, e.g. `Variable '@x' does not exist.`. |
+| `@adamErrorMessage` | Just the message, e.g. `Variable '@val' does not exist.`. |
 | `@adamErrorType` | The .NET exception type, e.g. `ReferenceException` or `ArgumentException`. |
 
 ## Examples
@@ -62,7 +62,7 @@ Produces: `"0"` when `@count` was never stored (the `eval` throws and the fallba
 ## Gotchas
 - **A `store` on an element that threw never happened.** The catch swallows the
   error, but the variable the failed element was supposed to set does not exist,
-  so the next read of it fails with `Variable '@x' does not exist.` - and *that*
+  so the next read of it fails with `Variable '@val' does not exist.` - and *that*
   error is outside the catch. If a store inside a catch matters afterwards,
   initialize it **before** the catch:
 
@@ -72,6 +72,21 @@ Produces: `"0"` when `@count` was never stored (the `eval` throws and the fallba
   ```
 
   This is the usual reason a catch appears to "lose" a store.
+
+- **Inside a loop, the variable keeps the PREVIOUS iteration's value.** The point above
+  describes a variable that was never stored. If it *was* stored on an earlier pass, a
+  failed `store` leaves that older value in place — it is not cleared. In a `foreach`
+  that silently attributes iteration 3's result to iteration 4:
+
+  ```xml
+  <ref:foreach in="@items" storeitem="@it" join="">
+    <ref:text out="" store="@mt"/>                              <!-- reseed EVERY pass -->
+    <ref:catch ex="System.Exception" out=""><ref:regex in="@it" expression="^p" store="@mt"/></ref:catch>
+    ...
+  </ref:foreach>
+  ```
+
+  Seeding before the loop is not enough; the reseed has to be **inside** the body.
 
 
 Besides `ex` and `out`, `ref:catch` also accepts `store=`, whether or not the catch fires. As everywhere else, `store=` suppresses the element's own emission. The common formatting attributes (`left`, `right`, `case`, ...) are accepted but have NO effect on a catch.

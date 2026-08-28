@@ -83,7 +83,7 @@ Produces: `"R&D Department"` (context: `{"records":[{"fields":{"Dept":"RND"}}]}`
 - **`keys` must be a TEXT value.** Switching directly on the result of `ref:eval` (a number) or `ref:compare` (a boolean) fails — those are typed values, and the switch needs text. Emit the computed value through a `ref:text store="@key"` first, or restructure. A text/field value of `"True"` or `"5"` matches fine; it is only the typed eval/compare output that is rejected.
 - **First match wins**, so order your items from most- to least-specific.
 - **No match and no `<default>` → empty output.** The switch emits `""`; it does not error.
-- **`keys` must be defined earlier in scope** (via `store=`); reading an undefined variable throws at run time (`Variable '@x' does not exist.`).
+- **`keys` must be defined earlier in scope** (via `store=`); reading an undefined variable throws at run time (`Variable '@val' does not exist.`).
 - **A `store` inside an item DOES escape the block** - there is no block scope. It holds whatever the item that actually ran assigned; an item that never ran leaves its variable undefined.
 - **A `switch` cannot be nested inside another `switch`'s `<item>` or `<default>`** — even wrapped in an `object` or `catch`. The reference parser rejects the nested `<item>` tags. Compute the inner result with `compare`/gates first, or restructure so the switches are siblings.
 

@@ -55,7 +55,7 @@ doubt, read the doc — then verify with the compiler.
 | Tag | Kind | Purpose | Key attributes | Doc |
 |---|---|---|---|---|
 | `replace` | leaf | Replace substring (e.g. strip whitespace) | `in`, `oldValue`, `newValue`, `store` | replace.md |
-| `regex` | leaf | Extract a regex match (1-based `match`; no substitution — use `ref:replace`) | `in`, `expression`, `match`, `store` | regex.md |
+| `regex` | leaf | Extract a regex match (1-based `match`; no substitution — use `ref:replace`). **THROWS when the pattern matches nothing** — wrap in `ref:catch` | `in`, `expression`, `match`, `store` | regex.md |
 | `translation` | leaf | Localized/translated string | `key`, `languageId`, `module`, `store` | translation.md |
 | `language` | leaf | Language entity lookup | `id`/`name`, `out`, `store` | language.md |
 

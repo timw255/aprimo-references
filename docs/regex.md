@@ -69,6 +69,19 @@ Produces: `"001"`
 - **`match` is 1-based** and returns the **whole match**, not a captured group. `match="1"` is the first match.
 - **No match anywhere → error.** If the expression matches nothing in the input, the reference throws — wrap it in [`ref:catch`](catch.md) if a value may not match. (A `match` index *beyond* the available matches, when the pattern *does* match elsewhere, returns `""`.)
 - **The `replace` attribute is a no-op.** `ref:regex` only ever returns a matched substring — it never substitutes. For literal find/replace use [replace.md](replace.md).
+- **An empty result is ambiguous — do not use it to mean "no match".** A *successful*
+  zero-width match returns `""` (e.g. `expression="o*"` against `alpha`), and so does a
+  `match` index beyond the available matches. Since a genuine no-match **throws** instead,
+  `IsNotEmpty(@mt)` under-counts any pattern that can match zero characters. This matters
+  when the pattern is not under your control — from a setting, say. Seed a sentinel and
+  compare against it rather than testing for emptiness:
+
+  ```xml
+  <ref:text out="__NOMATCH__" store="@mt"/>
+  <ref:catch ex="System.Exception" out=""><ref:regex in="@kw" expression="@pat" store="@mt"/></ref:catch>
+  <ref:compare value1="@mt" value2="__NOMATCH__" operator="ne" store="@hit"/>
+  ```
+
 - **Escape `<` and `>` as `&lt;`/`&gt;`** inside the attribute (e.g. lookbehind `(?<=...)`, named groups `(?<name>...)`).
 
 See also: [replace.md](replace.md) and [../reference/patterns.md](../reference/patterns.md).

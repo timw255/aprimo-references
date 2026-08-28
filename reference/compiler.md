@@ -56,6 +56,24 @@ echo '<ref:compare operator="in" value1="@xv" value2="5"/>' | bin/transpiler.exe
 
 Read the message, apply the named fix, lint again. Repeat until `"valid":true`.
 
+### The three severities — only one of them blocks
+
+`"valid"` is decided by **errors alone**. Warnings and info never make a reference invalid
+and never change the exit code, so **do not chase them to zero**:
+
+| severity | means | do |
+|---|---|---|
+| `error` | the reference always throws, or Aprimo will not save it | must fix — `"valid"` stays `false` until you do |
+| `warning` | it throws on the *ordinary* case, not just an edge case (e.g. `ref:regex` with no match) | usually fix, but it is a judgement call |
+| `info` | it throws depending on the **data** (a missing setting, an empty field, an unresolved id) | context, not a defect — decide, then move on |
+
+A `warning` or `info` is telling you where this reference can abort at run time and what
+condition triggers it. Each one's remedy names the situation to reproduce. The useful move is
+to **execute against a context that reproduces it** and see the actual failure, then decide
+whether to guard it. If the condition cannot occur for your data, leaving it is correct.
+
+Ship on `"valid":true`. Warnings and info can remain.
+
 ## EXECUTE — confirm behavior
 
 Lint proves it's *valid*; execute proves it's *correct*. A reference can compile and still do the

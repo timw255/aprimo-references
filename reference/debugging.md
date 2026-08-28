@@ -111,7 +111,7 @@ Build back up once each piece is confirmed.
   attribute lists the valid attributes. Reading a variable before it is `store`d is a lint
   **warning** (not a hard error), and a run-time error if reached.
 - **Runtime errors** appear in `-mode execute` output. The two you'll hit most:
-  - `Variable '@x' does not exist.` — you read a variable that was never `store`d. Define it
+  - `Variable '@val' does not exist.` — you read a variable that was never `store`d. Define it
     earlier, or wrap the read in `ref:catch` if it may legitimately be unset.
   - `Object has no member 'X'` — usually a wrong-cased `out` value (see below).
 

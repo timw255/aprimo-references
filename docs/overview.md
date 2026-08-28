@@ -89,6 +89,19 @@ A variable name is **case-sensitive** and:
 
 - must begin with `@` followed by an **alphabetic** character,
 - may only contain **alphanumeric** characters (no underscore — an `_` ends the variable name, so `@base_Prev` reads variable `@base` followed by the literal `_Prev`), and
+
+> **Use this on purpose.** Because `_` ends the name, `out="@lic_"` emits the value of `@lic`
+> followed by a literal underscore — which is how you build a delimited name without a
+> separate `ref:text` for the separator:
+>
+> ```xml
+> <ref:text onVariable="IsNotEmpty(@lic)" out="@lic_"/>
+> <ref:text onVariable="IsNotEmpty(@cls)" out="@cls_"/>
+> <ref:text out="@seq" right="4" padding="0"/>
+> ```
+>
+> Each gated line contributes `value_` only when its value is present, so absent parts leave
+> no stray separators. `.` behaves the same way.
 - must be **at least two characters** long — a single letter like `@s` is not a valid name.
 
 ```xml
@@ -223,8 +236,8 @@ Extra attributes change how a reference's result is produced — formatting, dat
 | `sqlEncoding` | `Oracle(nvarchar2)` | Make the value safe as an Oracle NVARCHAR. |
 | `sqlEncoding` | `Oracle(like)` | Make the value safe as an Oracle NVARCHAR used in a LIKE (`*` and `?` are wildcards). |
 | `store` | a variable name | Store the resolved value in the variable; the reference returns null. See **store** above. |
-| `onVariable` | a predefined function | Resolve only if the function returns true. See **Gating** above. |
-| `onAllVariables` | (variable list) | Resolve only if **all** listed variables are defined (AND of existence). See **Gating** above. |
+| `onVariable` | a predefined function | Resolve only if the function returns true. **Throws if the variable was never stored** — seed it first. See **Gating** above. |
+| `onAllVariables` | (variable list) | Resolve only if **all** listed variables are defined (AND of existence). Tolerates a never-stored name. See **Gating** above. |
 | `onAnyVariable` | (variable list) | Resolve only if **at least one** listed variable is defined (OR of existence). See **Gating** above. |
 | `onEmpty` | (a string) | Return the given string if the resolved value is empty. |
 
@@ -463,13 +476,13 @@ a lot: some tags dereference it and throw.
 
 | Tag | What happens |
 |---|---|
-| `ref:switch keys="@v"` | `Attribute 'keys' has an invalid value '' for node 'switch'.` It does **not** fall through to `<default>`. |
-| `ref:replace in="@v"` | `Object reference not set to an instance of an object.` |
-| `ref:regex in="@v"` | same null-reference error |
-| `ref:count in="@v"` | `Attribute 'in' has an invalid value '' for node 'count'.` |
+| `ref:switch keys="@val"` | `Attribute 'keys' has an invalid value '' for node 'switch'.` It does **not** fall through to `<default>`. |
+| `ref:replace in="@val"` | `Object reference not set to an instance of an object.` |
+| `ref:regex in="@val"` | same null-reference error |
+| `ref:count in="@val"` | `Attribute 'in' has an invalid value '' for node 'count'.` |
 | `ref:datediff date1/date2` | invalid-value error naming the attribute |
 
-**These are safe** — a null behaves like empty: `out="@v"` (renders nothing),
+**These are safe** — a null behaves like empty: `out="@val"` (renders nothing),
 `encode=`, `case=`, `ref:compare` (compares as `""`), `onEmpty=` (fires),
 `IsEmpty` (true). `left=`/`right=` and `sqlEncoding=` are **skipped** entirely,
 so no padding is applied and no conversion is attempted. A null used as a

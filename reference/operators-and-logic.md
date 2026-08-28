@@ -122,9 +122,14 @@ or regex keys (`<item key="[0-5]">` does NOT match numbers 0–5; it matches the
 - **Define before use.** A variable must be populated by a `store="@val"` *earlier in document order*
   than any reference that reads `@val`. Reading an undefined variable throws at run time
   (`Variable '@val' does not exist.`) — a catchable error — and lint warns about it.
-- **Branches don't reliably export variables.** A variable first `store`d inside a `switch` item,
-  a gated block, or a `catch` may not be available to siblings or after the block. If you need a
-  value afterward, `store` it at the top level.
+- **There is no block scope.** A variable `store`d inside a `switch` item, a `foreach` body, a
+  `ref:object` or a `ref:catch` **is** readable by later siblings and after the block. You do not
+  need to hoist it to the top level.
+- **But a `store` that never RUNS leaves the variable undefined.** A gate that is false, or a
+  block that throws before reaching the `store`, performs no assignment — the variable keeps its
+  previous value, or stays undefined if it never had one. That is what makes seeding matter:
+  `<ref:text out="" store="@flag"/>` before a conditional block, so a later
+  `onVariable="IsNotEmpty(@flag)"` has something to read. See *Gating* in `../docs/overview.md`.
 - Variable names are `@` + a letter followed by one or more letters/digits — a name must be **at
   least two characters**, so a single letter like `@s` is **not** a valid name. An **underscore ends
   the name** (`@base_Prev` reads the variable `@base` followed by the literal text `_Prev`, and

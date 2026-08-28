@@ -17,7 +17,7 @@ or, with literal content / nested children:
 |---|---|
 | `out` | The literal value (or `@variable`) to output. |
 | `store` | Capture the value into a variable **without emitting** it. |
-| `onVariable` | Gate output on a predicate: `IsNotEmpty(@val)`, `IsEmpty(@val)`, `IsNotZero(@val)`, `IsZero(@val)`, `IsNull`, `IsNotNull`. The variable **must already exist** - these test the value, not existence, and a never-stored variable THROWS `Variable '@x' does not exist.` Use `onAllVariables`/`onAnyVariable` to test "was it ever set". |
+| `onVariable` | Gate output on a predicate: `IsNotEmpty(@val)`, `IsEmpty(@val)`, `IsNotZero(@val)`, `IsZero(@val)`, `IsNull`, `IsNotNull`. The variable **must already exist** - these test the value, not existence, and a never-stored variable THROWS `Variable '@val' does not exist.` Use `onAllVariables`/`onAnyVariable` to test "was it ever set". |
 | `onAllVariables` / `onAnyVariable` | Gate on whether listed variables are **defined / non-null** (AND / OR). See Gotchas. |
 | `case` | `case="upper"` or `case="lower"` to change the value's case. |
 | `left` / `right` / `padding` | Fit the value into a fixed width. See "Formatting attributes". |

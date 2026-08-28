@@ -51,6 +51,11 @@ see `operators-and-logic.md`.
   iteration anyway? There's an advanced escape hatch — geometric-unroll + `result="ref"` — in
   `dynamic-references.md`.)
 - **general recursion** — only `result="ref"` re-resolves, and it is **capped at 3 levels**.
+- **splitting a string into a collection** — there is no `split`/`tokenize`. `join` goes
+  collection -> string and nothing goes back, so a delimited string (from a setting, say)
+  cannot be turned into something `foreach` can iterate. Design around it: keep the value as
+  a multi-value field, or express the alternatives in one regex (`^a|^b`) instead of looping
+  over them.
 
-There is NO block scope: a `store` inside a `foreach` body, a `switch` item, a `ref:object` or a `ref:catch` IS readable afterwards. The one exception is the `foreach` `storeitem`, which is consumed at loop end - reading it after the loop throws `Variable '@x' does not exist.`
+There is NO block scope: a `store` inside a `foreach` body, a `switch` item, a `ref:object` or a `ref:catch` IS readable afterwards. The one exception is the `foreach` `storeitem`, which is consumed at loop end - reading it after the loop throws `Variable '@val' does not exist.`
 don't export past a `foreach`/`switch`/`object`/`catch` — are detailed in `operators-and-logic.md`.)

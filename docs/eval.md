@@ -50,7 +50,7 @@ Substitutes the numeric field values, then evaluates.
 ## Gotchas
 - **Operands must be numeric.** Every term must resolve to a number. A `ref:compare` result is `True`/`False` and will throw "an invalid number was specified" inside eval. Combine conditions with gates, not arithmetic.
 - **`store` suppresses output.** An eval with `store="@val"` prints nothing; only an ungated `ref:text` emits.
-- **Variables must be defined earlier in document order.** Reading an undefined variable throws at run time (`Variable '@x' does not exist.`) — a catchable error, so wrap risky logic in `ref:catch` when a variable might be missing.
+- **Variables must be defined earlier in document order.** Reading an undefined variable throws at run time (`Variable '@val' does not exist.`) — a catchable error, so wrap risky logic in `ref:catch` when a variable might be missing.
 ### Division by zero does not throw
 
 Arithmetic is double-precision, and dividing by zero produces a **value**, not an error:
