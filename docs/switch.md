@@ -84,7 +84,17 @@ Produces: `"R&D Department"` (context: `{"records":[{"fields":{"Dept":"RND"}}]}`
 - **First match wins**, so order your items from most- to least-specific.
 - **No match and no `<default>` → empty output.** The switch emits `""`; it does not error.
 - **`keys` must be defined earlier in scope** (via `store=`); reading an undefined variable throws at run time (`Variable '@val' does not exist.`).
-- **A `store` inside an item DOES escape the block** - there is no block scope. It holds whatever the item that actually ran assigned; an item that never ran leaves its variable undefined.
+- **A `store` inside an item DOES escape the block** - there is no block scope. It holds whatever the item that actually ran assigned.
+- **Running a switch resets EVERY variable stored in ANY of its branches to null** - items and `<default>`, at any depth (inside `object`, `catch`, a nested switch), even when nothing matches. Then the taken branch runs and its own stores win. So **a value you stored before the switch is wiped** if any branch also stores that name: presetting a fallback and letting some items overwrite it yields an EMPTY value for every unmatched case, not the fallback. Put the fallback in `<default>` instead (or use the switch's own `store=`). The null reads as empty, satisfies `IsEmpty`, and fails `onAnyVariable`/`onAllVariables`. A switch that is gated off does not reset anything.
+
+  ```xml
+  <!-- WRONG: for a Video, @seg ends up EMPTY, not "Other" -->
+  <ref:text out="Other" store="@seg"/>
+  <ref:switch keys="@ct"><item key="Document"><ref:text out="Doc" store="@seg"/></item></ref:switch>
+
+  <!-- RIGHT -->
+  <ref:switch keys="@ct" store="@seg"><item key="Document">Doc</item><default>Other</default></ref:switch>
+  ```
 - **A `switch` cannot be nested inside another `switch`'s `<item>` or `<default>`** — even wrapped in an `object` or `catch`. The reference parser rejects the nested `<item>` tags. Compute the inner result with `compare`/gates first, or restructure so the switches are siblings.
 
 ## See also

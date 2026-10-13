@@ -109,7 +109,9 @@ These are where references most often go wrong (read `reference/operators-and-lo
   loop (a `foreach` count is fixed by its input), recursion only via `result="ref"` capped at 3, and
   variables are **one flat set** - there is no block scope, so a `store` inside a
   `foreach`/`switch`/`object`/`catch` **is** readable afterwards. It is missing only when the
-  storing element never ran (its gate was false, its switch branch wasn't taken, or it threw).
+  storing element never ran (its gate was false or it threw). A switch is the exception: running
+  it resets every variable stored in any of its branches to null, so an untaken branch's variable
+  reads empty - and a value preset before the switch is wiped. Put fallbacks in `<default>`.
 - **Externalize config into a setting instead of hardcoding.** Aprimo supports custom setting
   definitions (text/number/xml/reference/…); read any with `ref:setting name="X"`. When a rule
   would carry a big list, a mapping table, environment-specific URLs, or tunable thresholds, prefer
