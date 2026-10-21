@@ -193,12 +193,11 @@
     "welcome": "Welcome"
   },
   "settings": {
-    ".apiEndpoint": "https://api.aprimo.com",
-    ".config": "/etc/aprimo",
-    ".defaultClassificationSortOrder": "name",
-    ".maxFileSize": "10485760",
-    ".systemName": "Aprimo DAM",
-    ".uploadPath": "/uploads/documents"
+    ".technicalContactEmail": "dam-admin@example.com",
+    "ExampleCustomSetting": "example value"
+  },
+  "application": {
+    "damUrl": "https://tenant.dam.aprimo.com/dam"
   },
   "fileTypes": [
     {

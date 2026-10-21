@@ -64,7 +64,11 @@ echo '<ref:record fieldName="Status" out="value" store="@status"/>
 # => "LIVE"
 ```
 
-The output is the quoted string after `=== Execution Result ===` — exactly what Aprimo would show.
+The output is the quoted string after `=== Execution Result ===`. `execute` is a **simulation**
+of the platform's evaluator, not a call to Aprimo. It reproduces values, throws and error text
+for everything in `docs/`, but it cannot know your tenant's data: whether a classification,
+setting or user exists, what an Option List filter accepts, or how a field is configured. Mirror
+the data the reference needs into the context.
 
 ## Step 4 — flip every branch
 
@@ -134,6 +138,15 @@ Build back up once each piece is confirmed.
 | `invalid operator` on compare | Used `contains`/`in`/`>`/`gte`/etc. — not real Aprimo operators | Use the six documented operators; `ref:regex` for substring; compare-per-candidate + OR for membership |
 | Date math prints literally (`now+5`) | Used text instead of date math | `ref:datetimeeval in="@now" addYears="5"` |
 | `ref:regex` doesn't substitute | `regex`'s `replace` attr is a no-op here — it only extracts a match | Use `ref:replace` for substitution |
+| `The specified value is not a Guid.` | `ref:classification id=`/`ref:user id=` given an **empty** value - `id=""`, an empty variable, a blank list field - or a multi-value list (`"id1, id2"`) | Gate the lookup with `IsNotEmpty`; iterate multi-value fields with `ref:foreach` |
+| `Attribute 'in' has an invalid value '' for node 'datetimeeval'` | The date input is blank (empty field, empty string) | Gate with `IsNotEmpty(@date)` before the arithmetic |
+| `Attribute 'keys' has an invalid value '<guid>' for node 'switch'` | `switch` on a list field's `out="value"` - a collection even with one item | Read the field with `out="tostring"` (its name), or copy the ids through `ref:text` first |
+| `switch` never uses `<default>`, throws instead | The key is **null** (a blank list field via `out="value"`); only an empty **string** takes the default | Use `out="tostring"` - blank renders `""` |
+| `More than one matching item has been found.` | A `search=` resolved to several classifications/users (`name = 'Approved'` across branches; `group.name = ...` on a group with members) | Search by `namepath`; a user search must pin one user |
+| `No classification has been found matching the specified criterion. {0}` | A namepath search missed - the whole default fails | Check the path (leading slash optional, case-insensitive); allow-list the inputs; outer `ref:catch` |
+| `Invalid reference result type.` (Send e-mail action) | A `ref:catch` (or other text wrapper) around the `<recipients>` slot | Return a user/e-mail reference directly in the slot |
+| A custom catch message (`Oh No!`) shows in a field | It may come from **another field's** default on the same record | Search every field default for the text; remove catches while troubleshooting |
+| Default never fires on upload | Reset-to-Default trigger is **None** (never fires); or the default reads a field with a **higher Sort Index** | Use **On New Field**; give the field that is read the lower Sort Index |
 
 ## Lint-clean is not enough
 

@@ -481,6 +481,8 @@ a lot: some tags dereference it and throw.
 | `ref:regex in="@val"` | same null-reference error |
 | `ref:count in="@val"` | `Attribute 'in' has an invalid value '' for node 'count'.` |
 | `ref:datediff date1/date2` | invalid-value error naming the attribute |
+| `ref:datetimeeval in="@val"` | `Attribute 'in' has an invalid value '' for node 'datetimeeval'.` - also for an EMPTY string and a blank Date field |
+| `ref:classification id="@val"` / `ref:user id="@val"` | `The specified value is not a Guid.` - also for an EMPTY string and a blank Classification List field |
 
 **These are safe** — a null behaves like empty: `out="@val"` (renders nothing),
 `encode=`, `case=`, `ref:compare` (compares as `""`), `onEmpty=` (fires),

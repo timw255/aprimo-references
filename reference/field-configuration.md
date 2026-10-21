@@ -14,8 +14,8 @@ A field's default value can be a **reference** (e.g. `<ref:now/>`, or a computed
 
 | Trigger | The default recomputes… |
 |---|---|
-| **None** | only when the field is first initialized, then never again |
-| **On New Field** | when the field is added to an object (the default) |
+| **None** | **never on any record.** A field created with trigger *None* and a literal default stays empty on existing records, on a brand-new record, and after a save. *None* is "no default", not "once". |
+| **On New Field** | **once per record, when the field lands on it** - immediately on every existing record the moment the field definition is created, and on each new record at creation. This is the trigger for a "set once on upload" default. |
 | **On Save** | every time the object is saved |
 | **On Load** | every time the object is opened/loaded |
 | **On Any Change** | on any change to the object |
@@ -26,6 +26,9 @@ A field's default value can be a **reference** (e.g. `<ref:now/>`, or a computed
 | **On Field Definition Change** | when the field definition itself changes |
 | **On Duplicate Record** | when the record is created as a duplicate |
 
+- **Use `On New Field` for a once-on-upload default.** Choosing `None` is the single most common
+  reason a default "never fires" - it is not a one-time trigger, it disables the default on
+  records entirely.
 - **`On Field Change` watches specific fields.** Pick the watched fields in **Reset to Default
   Fields**; the default recomputes whenever any of them changes. This is how a *derived* field stays
   current — e.g. a "warn date" defaulted to `expiration − 30 days` recomputes when `ExpirationDate`
@@ -82,7 +85,12 @@ only** — not Date, Number, User/User List, or Classification List. So:
 - Flags and text labels → set with **Set field value**.
 - A **date/number** value → you can't set it with a rule action; compute it as a **default** instead.
 - A **User** field → populate via a default (`<ref:user out="id"/>`), not a rule.
-- **Classifications** → use the **Link / Unlink classification** rule actions, not Set field value.
+- **Classifications** → a **Classification List field** can be given a **Default Value** reference
+  like any other field; the reference must return the classification's **ID**
+  (`<ref:classification search="namepath = '/Security/Published/Restricted'" out="id"/>`, see
+  [classification.md](../docs/classification.md#setting-a-classification-list-fields-default-value)).
+  Use the **Link / Unlink classification** rule actions only when the goal is the record's actual
+  classification links (or a rule-time change) - a *Set field value* action cannot write the field.
 
 **Validation routines are read-only.** A field's validation reference can only *check* a value
 (returning, via `ref:compare`, whether it's valid) — it can **never set** a field. Use a rule to
@@ -98,14 +106,37 @@ another field; `field="current"` reads the field being validated.)
 | **Date** vs **DateTime** | Date = day/month/year; DateTime = date **and** time. Read parts with `out="year"/"month"/"day"`; DateTime supports `out="localvalue"/"utcvalue"` |
 | **Number / Text (unique)** | can enforce a **unique identifier** across the system (rebuild the unique-id cache after toggling) |
 | **User / User List** | not settable by a rule; populate via default; can be **filtered** by a reference (e.g. by group) |
-| **Classification List** | not settable by *Set field value*; managed via Link/Unlink actions; can be filtered, and can sync to the record's actual classification links |
+| **Classification List** | takes a **Default Value** reference that returns an **ID** (see above); not settable by *Set field value* (use Link/Unlink actions for rule-time changes); can be filtered, and can sync to the record's actual classification links |
 | **Record Link** | relates records (bidirectional); **no default-value option** — populate by linking records, not a computed default. See [Crossing records](#crossing-records) |
 
 **Use UTC for dates that mark a moment** (expiration, deadlines): set the field's *Use UTC* option so
 `Now` comparisons and `out="utcvalue"` line up across time zones.
 
-When several defaults depend on each other, **Sort Index** sets the calculation order — lower index
-computes first.
+## Sort Index - the order dependent defaults compute in
+
+When one field's default reads another field, the **Sort Index** of the two field definitions
+decides whether the value is there yet: defaults compute in **ascending Sort Index order**, and a
+default that reads a field with a *higher* index sees it **empty**. On a new record:
+
+| Field | Sort Index | Default | Result on the new record |
+|---|---|---|---|
+| `B` | 9010 | `<ref:text out="BVAL"/>` | `BVAL` |
+| `A` | 9011 | `A=<ref:record fieldName="B" out="value"/>` | `A=BVAL` (B computed first) |
+| `C` | 9020 | `C=<ref:record fieldName="D" out="value"/>` | `C=` (D not computed yet) |
+| `D` | 9021 | `<ref:text out="DVAL"/>` | `DVAL` |
+
+So give the field that is read the **lower** Sort Index. A mandatory field whose default reads a
+later field fails validation on save, because its default resolved to nothing. The Sort Index is
+on the field definition (REST: `sortIndex`), not on the reference.
+
+## Default Value length
+
+The REST API stores and evaluates Default Value references of tens of kilobytes. The
+**field-definition editor in the UI** can truncate a long default near **2,460 characters** and
+then fail with an XML parse error. `lint` warns (`long-reference`) above 2,400 characters. When a
+default is that long, move
+the bulk (mapping tables, long switches) into a **Reference-type setting** read with
+`<ref:setting name="..."/>` (ask the admin for the setting's key), or set the default through the REST API.
 
 ## Crossing records
 

@@ -132,6 +132,41 @@ Verify each slot's reference on its own (pipe just the `<recipients>`/`<subject>
 through `execute`) — don't pipe the `<mail>` wrapper; it isn't a reference. You can also keep the
 whole template in a custom setting and point the action at it with `<ref:setting name="YourSetting"/>`.
 
+**What each slot must return.** The wrapper is the action's own structure and the compiler cannot
+run it, so the slot result types below are the platform's rules, not something `execute` checks:
+
+| Slot | Expected result | Works | Breaks |
+|---|---|---|---|
+| `<recipients>` / `<cc>` | one or more e-mail addresses: a user reference (`<ref:user ... out="email"/>`), `<ref:subscribers out="email"/>` (Subscribers-list target only), or text holding `;`-separated addresses (e.g. a setting) | `<ref:user id="@OwnerId" out="email"/>`, `<ref:setting name="SecurityTeam"/>` | wrapping the slot in `ref:catch` - the action rejects it with **"Invalid reference result type."**; a `ref:user search=` that matches several users (throws "More than one matching item") |
+| `<subject>` | text | `<ref:text .../>` | - |
+| `<body>` | text / HTML, usually one `<ref:object>` | raw HTML inside `ref:object`, `ref:record out="title"`, `ref:application out="damUrl"` | - |
+
+The platform's own subscribers template is the model for a body with a link (`ref:subscribers`
+only resolves inside the Subscribers-list action):
+
+```xml
+<mail>
+  <recipients><ref:subscribers out="email"/></recipients>
+  <cc><ref:setting name=".technicalContactEmail"/></cc>
+  <subject><ref:text out="A content item you follow has expired"/></subject>
+  <body>
+    <ref:object>
+      <ref:text out="The content item "/>
+      <ref:record out="title" store="@title"/>
+      <ref:application out="damUrl" store="@damUrl"/>
+      <ref:record out="id" store="@id"/>
+      <ref:replace in="@id" oldValue="-" newValue="" store="@id"/>
+      <a href="@damUrl/contentitems/@id"><ref:text out="@title"/></a>
+      <ref:text out=" has expired."/><br/>
+      <div>This is an automatically generated e-mail.</div>
+    </ref:object>
+  </body>
+</mail>
+```
+
+To e-mail a **team**, put the addresses in a custom setting and read it in `<recipients>` - a
+reference cannot list a group's members (see [usergroup.md](../docs/usergroup.md)).
+
 ## Adaptable use cases
 
 Same shape — a field or two, a scheduled `Compare field value` condition, and an action:
@@ -152,8 +187,10 @@ Same shape — a field or two, a scheduled `Compare field value` condition, and 
 - **It verifies the `ref:` expressions:** field-default references, Set-field-value references, the
   individual e-mail slots, and `Reference match` `ref:compare` expressions. Lint and execute those as
   always.
-- **It does not verify:** the `<mail>` wrapper, the `Field <= Now+n` condition text, or the
-  field/rule configuration itself — those are set up in the DAM admin UI.
+- **It does not verify:** the `<mail>` wrapper and its slot result types, the `Field <= Now+n`
+  condition text, an Option List **filter**'s property names, whether a setting exists on the
+  tenant, or the field/rule configuration itself (triggers, Sort Index, scope) — those are set up
+  in the DAM admin UI.
 
 So the deliverable for a "make X happen" request is usually: **(1)** the field(s) to add, **(2)** the
 rule — trigger, conditions, actions, and **(3)** the verified reference snippets that go inside it.

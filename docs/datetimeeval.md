@@ -55,5 +55,11 @@ Produces: `"2027-12-15"`
 - **The default output is the culture format** `M/d/yyyy h:mm:ss tt` (e.g. `12/22/2027 11:49:47 PM`). Use `format="..."` for anything else. The output preserves date-only vs full: a Date field stays date-only (`12/31/2027`), a DateTime field keeps its time.
 - **Month/year math CLAMPS to month-end.** `addMonths="1"` on Jan 31 returns Feb 28 (not Mar 3); `addYears` on Feb 29 lands on Feb 28 in a non-leap year.
 - **`store` suppresses output.** With `store="@val"` nothing prints; emit it later with `ref:text out="@val"`.
+- **A blank input throws.** `in=""`, `in="@var"` holding an empty string, or a Date field that is
+  **blank on the record** all throw `Attribute 'in' has an invalid value '' for node
+  'datetimeeval'.` - the error is catchable but it kills an unguarded default value. Gate the
+  arithmetic: `<ref:object onVariable="IsNotEmpty(@exp)"><ref:datetimeeval in="@exp" addDays="-10"/></ref:object>`,
+  and wrap the whole default in `ref:catch` when the field can be empty (see
+  [patterns.md](../reference/patterns.md#default-value-that-reads-a-classification-or-date-field)).
 
 See also: [datediff.md](datediff.md), [datetime.md](datetime.md), and [../reference/patterns.md](../reference/patterns.md).

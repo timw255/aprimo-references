@@ -19,35 +19,37 @@ At least one of `name` or `key` is required — omitting both fails `lint`:
 
 ## Examples
 
-Read a system setting by name:
-```xml
-<ref:setting name=".systemName"/>
-```
-Produces: `"Aprimo DAM"`
+Setting names are the platform's **exact keys**, and they **differ per tenant and change over
+time** - built-in keys come and go with releases, and custom definitions are whatever the admin
+created. A name that does not exist throws (see Gotchas), so **never guess a key**: ask the user
+for it, or have them read it from *Settings* in the admin UI (or `GET /api/core/settingdefinitions`).
+The only key quoted from Aprimo's own documentation is `.technicalContactEmail`, the `<cc>` of the
+stock Send-email template. There is **no** `.damUrl` setting - the DAM base URL comes from
+[`ref:application out="damUrl"`](application.md).
 
-The default classification sort property:
+Read the technical contact:
 ```xml
-<ref:setting name=".defaultClassificationSortOrder"/>
+<ref:setting name=".technicalContactEmail"/>
 ```
-Produces: `"name"`
+Produces: `"dam-admin@example.com"` (default context; the tenant's own value live)
 
-Read a numeric setting (values are returned as text):
+Read a custom setting by its exact name:
 ```xml
-<ref:setting name=".maxFileSize"/>
+<ref:setting name="ExampleCustomSetting"/>
 ```
-Produces: `"10485760"`
+Produces: `"example value"` (default context)
 
 `key` is an accepted alias for `name`:
 ```xml
-<ref:setting key=".systemName"/>
+<ref:setting key="ExampleCustomSetting"/>
 ```
-Produces: `"Aprimo DAM"`
+Produces: `"example value"`
 
 Capture silently with `store`, then emit:
 ```xml
-<ref:setting name=".apiEndpoint" store="@ep"/><ref:text out="@ep"/>
+<ref:setting name="ExampleCustomSetting" store="@cfg"/><ref:text out="@cfg"/>
 ```
-Produces: `"https://api.aprimo.com"`
+Produces: `"example value"`
 
 ## Gotchas
 - A setting that does not exist **throws**: `No setting found matching the specified criterion.`
@@ -74,12 +76,17 @@ list, or environment-specific constants, that data usually belongs in a setting 
 reads: it's editable without touching (or redeploying) the reference. Defining the setting is an
 admin task in the Aprimo UI; from the reference side you just read it.
 
+**A distribution list is a setting.** References cannot enumerate a user group's members, so
+when an e-mail must go to a team, keep the addresses in a custom Text setting
+(`SecurityTeamRecipients` = `a@x.com;b@x.com`) and read it in the `<recipients>` slot. See
+[usergroup.md](usergroup.md).
+
 **Testing a setting locally.** You don't need the real setting to exist — add it (built-in or
 custom) to the `settings` map in your context and the compiler resolves it:
 
 ```bash
-echo '<ref:setting name=".maxRetentionYears"/>' \
-  | bin/transpiler.exe -mode execute -context-json '{"settings":{".maxRetentionYears":"7"}}'
+echo '<ref:setting name="MaxRetentionYears"/>' \
+  | bin/transpiler.exe -mode execute -context-json '{"settings":{"MaxRetentionYears":"7"}}'
 # -> "7"
 ```
 

@@ -83,6 +83,19 @@ Produces: `"R&D Department"` (context: `{"records":[{"fields":{"Dept":"RND"}}]}`
 - **`keys` must be a TEXT value.** Switching directly on the result of `ref:eval` (a number) or `ref:compare` (a boolean) fails — those are typed values, and the switch needs text. Emit the computed value through a `ref:text store="@key"` first, or restructure. A text/field value of `"True"` or `"5"` matches fine; it is only the typed eval/compare output that is rejected.
 - **First match wins**, so order your items from most- to least-specific.
 - **No match and no `<default>` → empty output.** The switch emits `""`; it does not error.
+  This makes an **allow-list switch** the safe shape for a default value: list the values you
+  handle and omit `<default>`, and any unexpected input (a *Draft*, a multi-value field, a value
+  nobody anticipated) is a harmless no-op instead of a lookup that throws.
+- **An EMPTY STRING key takes `<default>`; a NULL key throws.** `keys="@v"` with `@v` stored as
+  `""` (or `keys=""`) falls through to `<default>`. But a **blank list field read
+  with `out="value"`** is null, and `keys="@v"` then throws `Attribute 'keys' has an invalid
+  value '' for node 'switch'.` - it does **not** use `<default>`. Read the field with
+  `out="tostring"` instead: blank renders `""` and takes the default, and a selected value
+  renders its **name**, which is what switch items usually want.
+- **A list field's `out="value"` throws as `keys=`, even with ONE item selected.** The value is a
+  collection (`Attribute 'keys' has an invalid value '<id>' for node 'switch'.`). Use
+  `out="tostring"`, or copy through `ref:text` (`<ref:text out="@ids" store="@idText"/>`) if you
+  really want to switch on the id text.
 - **`keys` must be defined earlier in scope** (via `store=`); reading an undefined variable throws at run time (`Variable '@val' does not exist.`).
 - **A `store` inside an item DOES escape the block** - there is no block scope. It holds whatever the item that actually ran assigned.
 - **Running a switch resets EVERY variable stored in ANY of its branches to null** - items and `<default>`, at any depth (inside `object`, `catch`, a nested switch), even when nothing matches. Then the taken branch runs and its own stores win. So **a value you stored before the switch is wiped** if any branch also stores that name: presetting a fallback and letting some items overwrite it yields an EMPTY value for every unmatched case, not the fallback. Put the fallback in `<default>` instead (or use the switch's own `store=`). The null reads as empty, satisfies `IsEmpty`, and fails `onAnyVariable`/`onAllVariables`. A switch that is gated off does not reset anything.

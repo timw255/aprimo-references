@@ -37,6 +37,7 @@ The `id`/`search` attribute is **optional** wherever there is a notion of a "cur
 |---|---|---|
 | `contenttype` | String | Content type of the record. |
 | `status` | String | Status of the record. |
+| `title` | String | Title of the record (used in notification e-mails). |
 | `id` | Guid | Id of the record. |
 | `tag` | String | Value of the Tag property. |
 | `createdby` / `modifiedby` | Guid | User that created / last modified the record. |
@@ -124,7 +125,14 @@ this returns `"root/Departments/Admin"`.
 - **A missing field reads as NULL, not `""`.** Reading `fieldName="DoesNotExist"` is not an error and renders nothing, but the value is **null** — unlike a present-but-blank field. Passing that null to `ref:switch`, `ref:replace`, `ref:regex`, `ref:count` or `ref:datediff` throws. See [Missing values are null](overview.md#missing-values-are-null).
 - **Record properties are not fields — don't read them with `fieldName`.** The content type, status, id, creator, and dates are record **properties**, read with `out="..."` (`out="contenttype"`, `out="status"`, `out="id"`, `out="createdby"`, …) — *not* `fieldName="..."`. In particular `fieldName="ContentType"` looks for a metadata field named "ContentType" (which usually doesn't exist, so it silently returns `""`); to read the record's content type use `<ref:record out="contenttype"/>`. The compiler warns on `fieldName="ContentType"` for this reason. (`out="contenttype"` returns the content type's **name** as a string; there's no content-type object reference.)
 - **`current` file requires a file trigger.** Use `file="master"` for non-file triggers (On New Field, validation, defaults). `file="current"` is only valid for file-related triggers (On Any File Change).
-- **Multi-value fields return a collection**, auto-joined with commas only in a text context. To control the separator, iterate with `ref:foreach` and a `join`.
+- **Multi-value fields return a collection**, auto-joined with commas only in a text context. To control the separator, iterate with `ref:foreach` and a `join`. A list field with **one** item is still a collection - see [field.md](field.md#a-list-field-with-one-item-is-still-a-list).
+- **Building a link to the record.** `ref:record out="title"` and
+  [`ref:application out="damUrl"`](application.md) are what the platform's own notification
+  template uses; raw HTML is allowed inside `ref:object` (see [object.md](object.md)):
+  ```xml
+  <ref:application out="damUrl" store="@damUrl"/><ref:record out="id" store="@id"/><ref:replace in="@id" oldValue="-" newValue="" store="@id"/>
+  <ref:object><a href="@damUrl/contentitems/@id"><ref:record out="title"/></a></ref:object>
+  ```
 
 ## See also
 - [`../reference/patterns.md`](../reference/patterns.md) — the store-then-emit idiom, conditional defaults, crash-safe rules.

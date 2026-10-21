@@ -46,6 +46,10 @@ examples below say `transpiler.exe`: `bin/transpiler.exe` on Windows, `bin/trans
 `bin/transpiler-linux` on Linux — including Claude's own sandbox on claude.ai, which is Linux.
 Input is the bare reference XML on **stdin**. Full details + examples in `reference/compiler.md`.
 
+`execute` is a **simulation** of the platform's evaluator, not a call to Aprimo: it resolves
+classifications, settings, users and fields from the context you pass, so mirror the real data
+(and the blank-field cases) into `-context-json` before trusting a result.
+
 ```bash
 # 1. LINT — is it valid?  -> {"valid":true,"warnings":[]}  or errors with exact remedies
 echo '<ref:record fieldName="Title" out="value" store="@title"/><ref:text out="@title"/>' | bin/transpiler.exe -mode lint
@@ -76,12 +80,24 @@ These are where references most often go wrong (read `reference/operators-and-lo
 - **Read a field into a variable before you use it.** `<ref:record fieldName="X" out="value"
   store="@xv"/>` first, then reference `@xv`. Using `@xv` before a `store="@xv"` defines it is the #1
   error ("used before defined").
-- **List fields read back ids, not text.** `out="value"` on an Option List, Classification/User/
-  Record List, or Record Link returns the selected object's **id(s)**. Use `out="valuename"` for an
-  Option List; for the others do a two-step read (`<ref:record fieldName="X" out="value" store="@id"/>`
-  then `<ref:classification id="@id" out="name"/>` / `ref:user` / `ref:record`). Declare the field's
-  `dataType` in the context's `fieldMetadata` and the compiler will warn when a read returns ids. See
-  `docs/field.md`.
+- **List fields read back ids, not text - and a list stays a list.** `out="value"` on an Option
+  List, Classification List, User List or Record List returns the selected object's **id(s)** as a
+  collection, **even when one item is selected**: `switch keys=` on it throws and `compare` never
+  matches. For the readable **name** use `out="tostring"` (Classification List → classification
+  name, User List → user name, Option List → option name; `out="valuename"` is Option List only
+  and throws elsewhere). For the **path** or any other property do the two-step read
+  (`<ref:record fieldName="X" out="value" store="@id"/>` then `<ref:classification id="@id"
+  out="namePath"/>`). A Record Link rejects both `value` and `tostring` - use
+  `valuechildren`/`valueparents`/`valuelinks`. Declare the field's `dataType` in the context's
+  `fieldMetadata` and the compiler warns on both mistakes. See `docs/field.md`.
+- **Namepaths start with a slash.** `out="namePath"` returns `/Security/Published/Restricted`;
+  a `namepath = '...'` search accepts the path with or without the slash. Write search values in
+  **single quotes** inside the attribute (`&quot;` breaks on paste). A search that matches nothing
+  or several items **throws** - see `docs/classification.md`.
+- **Empty inputs throw.** `ref:classification id=""`/`id="@blank"`, `ref:datetimeeval in="@blank"`,
+  and `switch keys=` on a null all throw; gate lookups with `IsNotEmpty` and use the default-value
+  template in `reference/patterns.md` (gate each lookup + one outer `ref:catch`) for defaults that
+  read classification or date fields.
 - **Variable names need 2+ characters.** A name is `@` + a letter then letters/digits — **at least
   two characters**, no underscores (`@s` and `@a_b` are invalid; use `@status`, `@aVal`). The
   compiler hard-errors on an invalid `store=`, `storeitem=`, or `counter=` name, and a stray `@x`
@@ -122,6 +138,29 @@ These are where references most often go wrong (read `reference/operators-and-lo
 For worked, compiler-verified recipes (compound boolean rules, crash-safety with `catch`,
 conditional defaults, trimming before numeric compares, date logic), see `reference/patterns.md`.
 
+## How to behave on a request
+
+- **Start from the user's reference.** When given a working reference and asked "is something
+  wrong with this?" or for one change, return a list of issues and the **minimal edit** - keep
+  their variable names, tags, structure and formatting. Do not rewrite it, rename variables, swap
+  `switch` for gates, or add `ref:catch` blocks that were not asked for.
+- **Confirm the field type and cardinality before writing** - a Classification List or an Option
+  List, single-select or multi-select - or state the assumption in one line up front. A
+  single-select field does not need a `foreach`; a multi-select one does.
+- **Use only values the user supplied.** Build classification paths, option names and keys from
+  the exact strings given; never invent a mapping (a guessed `No Restriction` with a space caused a
+  production lookup failure). When a term is ambiguous ("Draft" - the `Status` field's value, or the
+  record's workflow status?) ask, or state which one you took.
+- **Settings and groups:** never guess a setting name - keys differ per tenant and change over
+  time, so ask the user for the exact key (there is no `.damUrl`; use
+  `ref:application out="damUrl"`). References cannot list a user group's members - propose a distribution-list setting or a
+  User List field (`docs/usergroup.md`).
+- **Field configuration is part of the answer** when a default "never fires": the Reset-to-Default
+  trigger must be **On New Field** (**None never fires**), and a default that reads another field
+  needs a **higher Sort Index** than that field (`reference/field-configuration.md`).
+- **A `ref:catch` around the whole reference is a template for field defaults only** - say when
+  you add one, and never put one around an e-mail `<recipients>` slot.
+
 ## Reference material in this skill
 
 - `reference/computational-model.md` — **construct map**: a copyable table translating ordinary
@@ -152,3 +191,5 @@ conditional defaults, trimming before numeric compares, date logic), see `refere
   symptom → cause → fix table.
 - `reference/compiler.md` — full compiler CLI: every mode, flags, output formats, how to read errors.
 - `docs/` — the complete per-tag Aprimo documentation (one `.md` per tag), ground truth for every tag.
+  The tag catalog in `reference/catalog.md` is the full set the platform accepts (including
+  `ref:application`, `ref:record out="title"` and raw HTML inside containers).

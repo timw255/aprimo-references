@@ -47,6 +47,14 @@ jobs:
           rm -rf stage && mkdir stage
           git archive --format=tar --prefix="$SKILL/" HEAD | tar -x -C stage
 
+          # The binaries MUST be executable in the zip. Set the bit here rather
+          # than trusting the index mode (Windows clones cannot carry it), and
+          # fail the release if any binary would ship without it.
+          chmod 755 "stage/$SKILL/bin/transpiler" "stage/$SKILL/bin/transpiler-linux" "stage/$SKILL/bin/transpiler.exe"
+          for f in transpiler transpiler-linux transpiler.exe; do
+            [ -x "stage/$SKILL/bin/$f" ] || { echo "::error::bin/$f is not executable"; exit 1; }
+          done
+
           kb=$(du -sk "stage/$SKILL/bin" | cut -f1)
           if [ "$kb" -gt "$MAX_BIN_KB" ]; then
             echo "::error::bin/ is ${kb} KB unpacked, over the ${MAX_BIN_KB} KB skill limit"
@@ -61,6 +69,15 @@ jobs:
 
           echo "--- zip contents ---"
           unzip -l "$SKILL.zip"
+
+          # Assert the zip entries carry the Unix exec bit (unzip restores it).
+          for f in transpiler transpiler-linux transpiler.exe; do
+            perm=$(zipinfo "$SKILL.zip" "$SKILL/bin/$f" | awk 'NR==1{print $1}')
+            case "$perm" in
+              -rwx*) echo "ok   bin/$f $perm" ;;
+              *) echo "::error::bin/$f packaged without the exec bit ($perm)"; exit 1 ;;
+            esac
+          done
 
       - name: Attach zip to the release
         if: startsWith(github.ref, 'refs/tags/')

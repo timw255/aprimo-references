@@ -6,6 +6,16 @@ below say `transpiler.exe`. The reference XML is passed on **stdin**; results pr
 This is the authority — it decides whether a reference is valid and what it produces. Trust it over
 memory.
 
+**`execute` is a simulation, not the tenant.** The bundled interpreter is a model of the platform's
+evaluator: it reproduces the values, throws and error messages documented in `docs/`. What it
+cannot do is see your tenant's
+**data and configuration**: it resolves classifications, users, settings and fields from the context
+you pass, so a reference that runs clean here can still throw in production when the classification
+path does not exist, the setting was never created, a field is blank on real records, or a field is
+configured with the wrong trigger. Mirror the real data into `-context-json` (ids, names, blank
+fields, `fieldMetadata`) and test the blank/missing cases explicitly - those are where production
+references fail.
+
 ## Modes (`-mode`)
 
 | Mode | Purpose | Output |

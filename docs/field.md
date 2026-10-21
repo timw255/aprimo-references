@@ -24,8 +24,8 @@ A "field" is not a standalone reference — you read a field by adding **field-s
 | `value` | (depends) | The field's value in its own datatype. **Default.** Honors `languageName`/`languageID`; multi-value fields return a collection. For **list-type fields** this is the selected object's **id(s)**, not a readable label — see [Reading list fields](#reading-list-fields-the-value-is-an-id-gotcha). |
 | `name` | String | Name of the field. |
 | `label` | String | Label of the field in the current user's language. |
-| `tostring` | String | String representation of the value. |
-| `valuename` | String | (Option List) Name of the selected value(s). |
+| `tostring` | String | String form of the value. On a **list-type field this resolves names**: a Classification List renders the classification name(s), a User List the user name(s), an Option List the option name(s) - several items are comma-joined and sorted alphabetically. On a Date field it is the display date. |
+| `valuename` | String | (Option List **only**) Name of the selected value(s). On any other type it throws `Attribute 'out' has an invalid value 'valuename' for node 'record'.` |
 | `valuechildren` / `valueparents` / `valuelinks` | collection | (Record Link) Related record values. |
 | `localvalue` / `utcvalue` | DateTime | (DateTime fields) Value in local time / UTC. |
 | `year` / `month` / `day` | Int | (Date fields) Parts of the stored date. |
@@ -50,6 +50,14 @@ Produces: `"Description"` (same context)
 ```
 Produces: `"5"` (context: `{"records":[{"fields":{"Rating":"5"}}]}`)
 
+**Read a Classification List field's name in one step** - `tostring` resolves the selected
+classification's **name** (not its id, not its path):
+```xml
+<ref:record fieldName="AssetStatus" out="tostring"/>
+```
+Produces: `"Approved"` (default-context shape: the field holds a classification id and
+`classifications` carries `{id, name: "Approved"}`)
+
 **Reference the current field in a field-context rule.** In a validation routine or default-value rule, `field="current"` points at the field being processed without naming it — so the rule works on whatever field it is attached to:
 ```xml
 <ref:record field="current" out="value"/>
@@ -73,14 +81,46 @@ live against Aprimo). So `out="value"` on a list field gives you **ids, not a re
 — the single most common surprise when reading fields. How to get the readable value depends
 on the type:
 
-| Field type | What `out="value"` returns | Read the readable value with |
-|---|---|---|
-| **Option List** | the selected option's id | `out="valuename"` (one step) |
-| **Classification List** | classification id(s) | a two-step read: `<ref:classification id="@id" out="name"/>` |
-| **User List** | user id(s) | a two-step read: `<ref:user id="@id" out="name"/>` |
-| **Record List** | record id(s) | a two-step read: `<ref:record id="@id" fieldName="..."/>` |
-| **Record Link** | linked record id(s) | `out="valuechildren"`/`"valueparents"`/`"valuelinks"`, or resolve each id with `<ref:record id="@id" .../>` |
-| **Text List** | the literal strings | nothing extra — already readable |
+| Field type | What `out="value"` returns | Readable in one step | Readable per item (two-step) |
+|---|---|---|---|
+| **Option List** | the selected option's id | `out="valuename"` or `out="tostring"` (the option name) | - |
+| **Classification List** | classification id(s) | `out="tostring"` (the **name**, not the path) | `<ref:classification id="@id" out="name"/>` (or `namePath`/`label`) |
+| **User List** | user id(s) | `out="tostring"` (the user name) | `<ref:user id="@id" out="name"/>` |
+| **Record List** | record id(s) | - | `<ref:record id="@id" fieldName="..."/>` |
+| **Record Link** | **throws** - `value` and `tostring` are invalid on a Record Link | - | `out="valuechildren"`/`"valueparents"`/`"valuelinks"`, then `<ref:record id="@id" .../>` |
+| **Text List** | the literal strings (a list) | `out="tostring"` (comma-joined text) | - |
+
+**Valid `out` values per field type** (anything else throws
+`Attribute 'out' has an invalid value '...' for node 'record'.`):
+
+| Field type | `value` | `tostring` | `valuename` | `year`/`month`/`day` | `localvalue`/`utcvalue` | `valuechildren`/`valueparents`/`valuelinks` |
+|---|---|---|---|---|---|---|
+| Text, Multi-line, Html, Number | the text/number | same | throws | throws | throws | throws |
+| Date | date | display date (`6/15/2027`) | throws | parts | throws | throws |
+| DateTime | date-time | display | throws | parts | yes | throws |
+| Option List | id (a list) | option name(s) | option name(s) | throws | throws | throws |
+| Classification List | id(s) (a list) | classification name(s) | **throws** | throws | throws | throws |
+| User List | id(s) (a list) | user name(s) | throws | throws | throws | throws |
+| Record List | id(s) (a list) | - | throws | throws | throws | throws |
+| Record Link | **throws** | **throws** | throws | throws | throws | linked record values |
+| Text List | the strings (a list) | comma-joined | throws | throws | throws | throws |
+
+`name` and `label` are valid on every type (the field's own name/label, not its value).
+
+**When the reference needs the name, use `tostring`** - it is one step and never throws on a
+blank field (it renders empty). A production `Status` switch works exactly this way:
+
+```xml
+<ref:record fieldName="Status" out="tostring" store="@status"/>
+<ref:switch keys="@status">
+  <item key="Expired">...</item>
+  <item key="Approved">...</item>
+</ref:switch>
+```
+
+**When the reference needs the path** (to build or compare a namepath), use the two-step read:
+`out="value"` for the id, then `<ref:classification id="@id" out="namePath"/>`. The returned
+path **starts with a slash** (`/Security/Published/Restricted`).
 
 **Option List** — one step, no resolution needed:
 ```xml
@@ -102,6 +142,41 @@ for multi-value fields):
 > **throws a `ReferenceException`**. It's catchable: wrap it in
 > `ref:catch` if you need a fallback. (The compiler reproduces this when the field's `dataType`
 > is declared in the context — see below.)
+
+## A list field with ONE item is still a list
+
+`out="value"` on any list-type field - Option List, Classification List, User List, Record List,
+Text List - returns a **collection even when exactly one item is selected**.
+That decides what you can do with the stored variable:
+
+| Consumer | One item selected | Several items |
+|---|---|---|
+| `ref:count in="@ids"` | `1` | `n` |
+| `ref:foreach in="@ids"` | iterates once | iterates n times |
+| `ref:classification id="@ids"` / `ref:user id="@ids"` | resolves (the one id) | throws `The specified value is not a Guid.` |
+| `ref:switch keys="@ids"` | **throws** `Attribute 'keys' has an invalid value '<id>' for node 'switch'.` | throws |
+| `ref:compare value1="@ids" value2="<id>"` | **`False`** (a list never equals a string) | `False` |
+| `ref:text out="@ids"`, `left=`, `replace`, `encode=` | the id text | the ids comma-joined |
+
+So never `switch` or `compare` on a list field's `out="value"`. Either read the field with
+`out="tostring"` (its name), or copy the ids to plain text first - a `ref:text` hop turns any
+field list into its joined string (`<ref:text out="@ids" store="@idText"/>`), after which
+`switch`/`compare` behave normally. (A `ref:object store=` keeps the list typed.) The compiler
+warns about both when the field's `dataType` is declared in `fieldMetadata`.
+
+**A blank list field reads as NULL through `out="value"`** (so `switch keys=` throws, and
+`ref:classification id=` throws "not a Guid"), but as an **empty string through `out="tostring"`**
+(so a switch falls through to `<default>`). Prefer `tostring` for anything that branches.
+
+**Multi-value Classification List fields** hold several ids: `out="value"` renders
+`"id1, id2"`, `out="tostring"` renders the names alphabetically (`"Deny Delete, Deny Modify"`
+regardless of selection order), and only `ref:foreach` lets you resolve each one:
+
+```xml
+<ref:record fieldName="Regions" out="value" store="@ids"/>
+<ref:foreach in="@ids" storeitem="@id" join="|"><ref:classification id="@id" out="namePath"/></ref:foreach>
+```
+Produces: `/Assets/Stories/Region/NorthAmerica/USA|/Assets/Stories/Region/NorthAmerica`
 
 ## Representing fields in the execution context
 

@@ -59,6 +59,19 @@ Produces: `(name = 'my name')`
 **Values are escaped for you.** A `'` inside a parameter is doubled
 automatically - `O'Brien` becomes `'O''Brien'`. Do **not** pre-escape it, or you
 will get `'O''''Brien'`.
+## Filtering an Option List's items
+
+An Option List field definition can carry a **filter** reference whose result is a search
+expression over the field's own option items. The item property to filter on is **`Name`**
+(`value` and `FieldLabel` are not accepted). The compiler cannot
+validate the property names a filter expression uses - it only renders the string - so verify a
+filter in the field definition itself. Use single quotes for literal values:
+
+```xml
+<ref:record fieldName="Region" out="tostring" store="@region"/>
+<ref:searchExpression expression="Name = ?" param1="@region"/>
+```
+
 ## Gotchas
 - **Parameters are positional.** The Nth `?` is replaced by `paramN`. Provide as many parameters as there are placeholders.
 - **Parameter names must start at `param1` and increment with no gaps** (`param1`, `param2`, …). A maximum of 25 parameters is supported.

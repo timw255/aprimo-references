@@ -15,12 +15,14 @@ doubt, read the doc — then verify with the compiler.
 | `record` | leaf | Read a field or record attribute | `fieldName`, `out`, `store`, `file` | record.md |
 
 > `ref:record` reads three kinds of thing via `out`: a **field** value
-> (`fieldName="X" out="value"`), a **record attribute** (`out="contenttype"`, `out="status"`,
+> (`fieldName="X" out="value"`, or `out="tostring"` for a list field's **name**), a **record
+> attribute** (`out="contenttype"`, `out="status"`, `out="title"`,
 > `out="createdonutc"`), or a **master-file property** (`file="master" out="filesize"` /
 > `out="basefilename"` / `out="filename"`). Use `file="master"` (or `file="current"` for
 > file-triggered rules) for file reads. `out="size"` is NOT valid — it's `out="filesize"`.
 | `field` | leaf | Read the current field's properties | `out`, `store` | field.md |
 | `setting` | leaf | Read a system/configuration setting | `name`, `out`, `store` | setting.md |
+| `application` | leaf | The tenant's DAM base URL (`out="damUrl"`), for links in e-mails | `out`, `store` | application.md |
 | `dict` | leaf | Look up a dictionary/term value | `key` or `name`, `out`, `store` | dict.md |
 | `count` | leaf | Count items in a collection/field | `store`, target attrs | count.md |
 | `eval` | leaf | Evaluate an expression over variables | `expression`, `store` | eval.md |

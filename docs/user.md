@@ -18,7 +18,7 @@ With no `id`, `name`, or `search`, the reference resolves against the **current*
 | `out` | yes | The user property to return. Must be one of the lowercase values below. |
 | `id` | no | Look up the user by Id (a GUID). |
 | `name` | no | Look up the user by name/Login ID. Matches the display name or the username. |
-| `search` | no | Look up the user by a search expression. |
+| `search` | no | Look up the user by a search expression that resolves to **exactly one** user. Searchable properties: `name` (case-insensitive), `firstname`, `lastname`, `email`, `id`, and the group subquery `group.name` / `group.id`; terms combine with `and`. `username` is **not** a property (`The specified field 'username' does not exist.`); a bare word with no `=` is a full-text query, which users do not support; a miss throws `No user has been found matching the specified criterion.`; several hits throw `More than one matching item has been found.`. An `@` inside the literal (`email = 'a@x.com'`) is read as a **variable** - search by name, not e-mail. |
 
 Use at most one of `id`, `name`, or `search`. Omit all three for the current user.
 

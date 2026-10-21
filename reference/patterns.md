@@ -257,6 +257,67 @@ emits nothing (so the field keeps its existing value):
 Nesting two gates is the reliable way to AND conditions for control flow (see "Combining conditions
 with gates" above).
 
+## Default value that reads a classification or date field
+
+Field defaults run on every record the trigger touches, including records where the inputs are
+blank, and the lookups that build a classification default **throw on blank input**: a blank
+Classification List read is null, `ref:classification id="@null"` throws *not a Guid*, a
+`namepath` search that misses throws, and `ref:datetimeeval` on a blank date throws
+*invalid value ''*. `IsNotEmpty` gates alone are not enough once two or three lookups chain, so the
+template that holds up in production is **a gate before each lookup plus one outer `ref:catch`**:
+
+```xml
+<ref:catch ex="System.Exception" out="">
+  <ref:record fieldName="Status" out="tostring" store="@status"/>
+  <ref:record fieldName="Region" out="value" store="@regionId"/>
+  <ref:object onVariable="IsNotEmpty(@regionId)">
+    <ref:classification id="@regionId" out="name" store="@region"/>
+  </ref:object>
+  <ref:switch keys="@status">
+    <item key="Approved"><ref:object onVariable="IsNotEmpty(@region)"><ref:classification search="namepath = '/Security/Published/@region'" out="id"/></ref:object></item>
+    <item key="Expired"><ref:classification search="namepath = '/Security/Archived'" out="id"/></item>
+  </ref:switch>
+</ref:catch>
+```
+
+Three caveats on the outer `catch`, all deliberate:
+
+- **It hides real errors.** While troubleshooting a default that "does nothing", remove the catch
+  (or change `out=""` to `out="@adamErrorMessage"`) so the throw shows in the field, then put it
+  back. A custom catch message such as *Oh No!* appearing in a field may come from **another
+  field's** default on the same record - search every default for the text.
+- **It changes the result type** of the reference, so it does not belong around a slot that must
+  return a typed value - the `<recipients>` of a Send e-mail action in particular (see
+  [automation-patterns.md](automation-patterns.md#the-notification-e-mail-template)).
+- **Only add it where it is asked for or where a default can fail** - not around every reference
+  by reflex.
+
+The switch is an **allow-list**: it names the values it handles and has no `<default>`, so a
+*Draft*, an unexpected value, or a multi-value field falls through to nothing instead of feeding a
+search that throws. Prefer that over "exclude Draft and run on everything else". Also prefer
+`out="tostring"` (the name) over `out="value"` (ids) for the switch key: it is a string, it renders
+blank rather than null when the field is empty, and it needs no second lookup.
+
+**Convention for a *Security* classification default:** skip the calculation when `Status` is
+*Draft* - a draft record has no security classification yet and the lookups would fail. The
+allow-list above does this implicitly; make it explicit with
+`<ref:object onVariable="IsNotEmpty(@status)">` around the switch if `Status` can be blank.
+
+## Building a namepath from a field (the two-step read)
+
+A reference that **builds** a namepath needs the name of a selected classification. Read the id,
+then resolve it - `out="value"` gives ids, and `ref:classification` turns one id into a name or
+path. The returned `namePath` **starts with a slash**:
+
+```xml
+<ref:record fieldName="Region" out="value" store="@regionId"/>
+<ref:classification id="@regionId" out="name" store="@region"/>
+<ref:classification search="namepath = '/Security/@region/Restricted'" out="id"/>
+```
+
+If the reference only needs the **name** (to switch on, or to print), `out="tostring"` on the
+field is the one-step form and skips the lookup entirely.
+
 ## Date before/after
 
 `compare` works directly on date strings — no `datediff` needed for simple before/after:

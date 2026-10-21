@@ -57,6 +57,23 @@ Produces: e.g. `"2031-06-15T13:58:16-04:00"` (now + 5 years)
 ```
 Produces: `"hi"`
 
+## Raw HTML / XML markup inside a container
+
+Elements that are **not** `ref:` tags - `<b>`, `<a href="...">`, `<div>`, `<br/>`, `<p>` - are
+allowed inside `ref:object` (and inside `ref:catch`, `ref:foreach` bodies and `<item>`s) and pass
+through **literally** to the output. This is how e-mail bodies are built:
+
+```xml
+<ref:application out="damUrl" store="@damUrl"/>
+<ref:record out="id" store="@id"/>
+<ref:object><a href="@damUrl/contentitems/@id"><ref:record out="title"/></a><br/><div>Please review.</div></ref:object>
+```
+Produces: `<a href="https://tenant.dam.aprimo.com/dam/contentitems/...">Quarterly Report</a><br/><div>Please review.</div>`
+
+Two rules: `@variables` are substituted inside the markup's **attributes** (`href="@damUrl/..."`)
+but **not** in its text content - emit text through `<ref:text out="@var"/>`; and the markup
+must be well-formed XML (`<br/>`, not `<br>`; `&amp;` for a literal `&`).
+
 ## Gotchas
 
 - **`object` vs `text`:** reach for `ref:text` for human-readable string output; reach for `ref:object` when a later reference must consume the **typed** value (a date object, a collection) rather than its string form. For plain literals they behave the same.
